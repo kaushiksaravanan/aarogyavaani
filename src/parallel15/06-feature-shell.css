@@ -1,0 +1,263 @@
+.feature-shell-section {
+  --p15fs-bg: hsl(28 45% 8%);
+  --p15fs-bg-soft: hsl(28 45% 12% / 0.58);
+  --p15fs-panel: linear-gradient(180deg, hsl(28 45% 12%), hsl(28 45% 11%));
+  --p15fs-line: hsl(28 45% 20%);
+  --p15fs-line-soft: hsl(28 45% 22% / 0.6);
+  --p15fs-text: hsl(45 21% 95%);
+  --p15fs-text-soft: hsl(45 21% 88% / 0.84);
+  --p15fs-text-muted: hsl(45 21% 65%);
+  --p15fs-accent: hsl(28 45% 57%);
+  --p15fs-radius-xl: 1rem;
+  --p15fs-radius-pill: 999px;
+  color: var(--p15fs-text);
+}
+
+.feature-shell-section .p15fs-container {
+  width: min(1152px, calc(100% - 3rem));
+  margin: 0 auto;
+}
+
+.feature-shell-section .p15fs-intro {
+  display: grid;
+  gap: 1rem;
+  max-width: 44rem;
+  margin: 0 auto 4rem;
+  text-align: center;
+}
+
+.feature-shell-section .p15fs-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 0.42rem 1rem;
+  border: 1px solid var(--p15fs-line);
+  border-radius: var(--p15fs-radius-pill);
+  color: var(--p15fs-text-soft);
+  font-size: 0.9rem;
+}
+
+.feature-shell-section .p15fs-intro h2 {
+  margin: 0;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(2.5rem, 5vw, 4.4rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.feature-shell-section .p15fs-intro h2 span {
+  display: block;
+  color: var(--p15fs-text-muted);
+  font-style: italic;
+}
+
+.feature-shell-section .p15fs-intro p,
+.feature-shell-section .p15fs-stage__body > p {
+  margin: 0;
+  color: var(--p15fs-text-muted);
+  line-height: 1.65;
+}
+
+.feature-shell-section .p15fs-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 280px) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.feature-shell-section .p15fs-nav-wrap {
+  position: sticky;
+  top: 8rem;
+}
+
+.feature-shell-section .p15fs-nav {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.feature-shell-section .p15fs-nav__button {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: transparent;
+  color: var(--p15fs-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.feature-shell-section .p15fs-nav__button:hover,
+.feature-shell-section .p15fs-nav__button.is-active {
+  background: hsl(28 45% 16%);
+  color: var(--p15fs-text);
+}
+
+.feature-shell-section .p15fs-nav__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 0.25rem;
+  background: hsl(45 21% 65% / 0.4);
+}
+
+.feature-shell-section .p15fs-nav__button.is-active .p15fs-nav__dot {
+  background: var(--p15fs-accent);
+}
+
+.feature-shell-section .p15fs-nav__button span:last-child {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.feature-shell-section .p15fs-stack {
+  position: relative;
+}
+
+.feature-shell-section .p15fs-stage {
+  position: sticky;
+  top: calc(128px + (var(--p15fs-stack-order) * 80px));
+  overflow: hidden;
+  border: 1px solid var(--p15fs-line);
+  border-radius: var(--p15fs-radius-xl);
+  background: var(--p15fs-panel);
+}
+
+.feature-shell-section .p15fs-stage__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 5rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--p15fs-line-soft);
+  overflow: hidden;
+  background: linear-gradient(135deg, #c6750c 0%, #c6750c 36%, #000a0f 100%);
+}
+
+.feature-shell-section .p15fs-stage__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 46% 26%, rgba(255, 255, 255, 0.16), transparent 16%),
+    radial-gradient(circle at 58% 44%, rgba(255, 255, 255, 0.09), transparent 22%),
+    linear-gradient(132deg, rgba(255, 255, 255, 0.12), transparent 30%),
+    repeating-linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0 10px, transparent 10px 30px);
+  opacity: 0.58;
+}
+
+.feature-shell-section .p15fs-stage__count {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.feature-shell-section .p15fs-stage__header h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 400;
+  color: #ffffff;
+}
+
+.feature-shell-section .p15fs-stage__body {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem 0 0;
+}
+
+.feature-shell-section .p15fs-stage__body > p {
+  max-width: 34rem;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.feature-shell-section .p15fs-stage__placeholder {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.feature-shell-section .p15fs-stage__surface {
+  min-height: 20rem;
+  border: 1px solid hsl(45 21% 100% / 0.07);
+  border-radius: calc(var(--p15fs-radius-xl) - 0.2rem);
+  background:
+    radial-gradient(circle at top left, hsl(28 45% 22% / 0.55), transparent 42%),
+    linear-gradient(180deg, hsl(28 45% 14%), hsl(28 45% 10%));
+  box-shadow: inset 0 1px 0 hsl(45 21% 100% / 0.04);
+}
+
+@media (max-width: 1080px) {
+  .feature-shell-section .p15fs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-shell-section .p15fs-nav-wrap {
+    position: static;
+  }
+
+  .feature-shell-section .p15fs-nav {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+  }
+
+  .feature-shell-section .p15fs-nav::-webkit-scrollbar {
+    height: 0;
+  }
+
+  .feature-shell-section .p15fs-nav__button {
+    flex: 0 0 auto;
+  }
+
+  .feature-shell-section .p15fs-stage {
+    top: calc(128px + (var(--p15fs-stack-order) * 64px));
+  }
+}
+
+@media (max-width: 920px) {
+  .feature-shell-section .p15fs-stage,
+  .feature-shell-section .p15fs-nav-wrap {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .feature-shell-section .p15fs-container {
+    width: min(100%, calc(100% - 1.5rem));
+  }
+
+  .feature-shell-section .p15fs-stage {
+    border-radius: 1.4rem;
+  }
+
+  .feature-shell-section .p15fs-stage__body,
+  .feature-shell-section .p15fs-stage__placeholder {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .feature-shell-section .p15fs-stage__header {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

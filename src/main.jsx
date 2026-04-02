@@ -1,0 +1,15 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./fonts.css";
+import "./parallel/hero-top.css";
+import "./parallel/middle-sections.css";
+import "./parallel/lower-sections.css";
+import "./parallel15/02-header.css";
+import "./styles.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
