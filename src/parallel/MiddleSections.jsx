@@ -1,113 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  brand,
+  urls,
+  comparison,
+  howItWorks,
+  features,
+  useCases,
+  useCaseStats,
+  previewTitles,
+} from "../siteConfig";
 import "./middle-sections.css";
-
-const COMPARISON_PAIN_POINTS = [
-  "Long standups with unclear progress updates",
-  "Manually writing status updates and reports",
-  "Chasing team members for progress updates",
-  'Stakeholders asking "what shipped this week?"',
-];
-
-const COMPARISON_BENEFITS = [
-  "Automated reports from actual Git activity",
-  "AI-summarized commits and PRs delivered to Slack/email",
-  "Real-time visibility for stakeholders",
-  "Come to standups already prepared",
-];
-
-const HOW_IT_WORKS_STEPS = [
-  {
-    number: "01",
-    title: "Connect Your Repo",
-    body: "With one click, we set up webhooks automatically. No configuration files, no YAML hell.",
-  },
-  {
-    number: "02",
-    title: "We Watch Your Activity",
-    body: "Every commit, PR, and merge gets tracked. No manual updates needed. Your Git activity speaks for itself.",
-  },
-  {
-    number: "03",
-    title: "You Get Answers",
-    body: "Check your dashboard, ask our AI, or wait for your weekly/daily email. Your choice—we're not pushy about it.",
-  },
-];
-
-const FEATURES = [
-  {
-    id: "connect",
-    title: "Connect Your Stack",
-    description:
-      "Gitmore works with the tools you already love. GitHub, GitLab, or Bitbucket — connecting takes just a few clicks.",
-    stickyTop: 128,
-    minHeight: "31.25rem",
-  },
-  {
-    id: "reports",
-    title: "Automated Reports",
-    description:
-      "Set up once, receive intelligent summaries automatically. Come to standups prepared with all the context you need.",
-    stickyTop: 208,
-    minHeight: "31.25rem",
-  },
-  {
-    id: "monitoring",
-    title: "Live Monitoring",
-    description:
-      "Track all your commits and pull requests across repositories with a live monitoring board.",
-    stickyTop: 288,
-    minHeight: "31.25rem",
-  },
-  {
-    id: "chat",
-    title: "AI Chat Assistant",
-    description:
-      "Ask questions about your progress, pull requests, or commits. Get instant answers in Slack or on Gitmore.",
-    stickyTop: 128,
-    minHeight: "46.25rem",
-  },
-];
-
-const USE_CASES = [
-  {
-    title: "Developers",
-    badge: "DE",
-    tagline: "Code speaks. You don't have to.",
-    description:
-      "Push code, get recognized. Your commits tell the story — no status updates needed.",
-    benefits: ["Automatic activity tracking", "Leaderboard recognition", "Zero reporting overhead"],
-  },
-  {
-    title: "Engineering Managers",
-    badge: "EM",
-    tagline: "See everything. Micromanage nothing.",
-    description:
-      "Get complete visibility into team progress without interrupting flow states.",
-    benefits: ["AI-generated summaries", "Spot blockers early", "Data-driven 1:1s"],
-  },
-  {
-    title: "Product Managers",
-    badge: "PM",
-    tagline: "Real-time insights, zero interruptions.",
-    description:
-      "Know what shipped, what's in progress, and what's blocked — without asking.",
-    benefits: ["Automated progress reports", "Feature tracking", "Release visibility"],
-  },
-  {
-    title: "CTOs & Founders",
-    badge: "CX",
-    tagline: "High-level visibility. Low-level effort.",
-    description:
-      "Understand engineering velocity across all repos without manual reports.",
-    benefits: ["Executive summaries", "Cross-team insights", "Strategic visibility"],
-  },
-];
-
-const USE_CASE_STATS = [
-  { value: "3x", label: "Faster reporting with AI" },
-  { value: "50%", label: "Shorter standup meetings" },
-  { value: "100%", label: "Visibility into team activity" },
-];
 
 function cx(...values) {
   return values.filter(Boolean).join(" ");
@@ -138,7 +40,7 @@ function ArrowRightIcon() {
 }
 
 function CheckIcon() {
-  return <span aria-hidden="true" className="ms-icon ms-icon-check">✓</span>;
+  return <span aria-hidden="true" className="ms-icon ms-icon-check">{"\u2713"}</span>;
 }
 
 function ServiceMark({ kind }) {
@@ -223,14 +125,14 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
 
         <div className="ms-panel ms-compare">
           <div className="ms-compare__controls">
-            <label htmlFor="gitmore-team-size">Team size</label>
+            <label htmlFor="team-size-slider">Team size</label>
 
             <div className="ms-range">
               <div className="ms-range__track">
                 <div className="ms-range__fill" style={{ width: `${sliderPercent}%` }} />
               </div>
               <input
-                id="gitmore-team-size"
+                id="team-size-slider"
                 type="range"
                 min="1"
                 max="20"
@@ -248,7 +150,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
             <article className="ms-compare-card">
               <div className="ms-compare-card__header">
                 <p>Manual updates</p>
-                <h3>Without Gitmore</h3>
+                <h3>{comparison.withoutLabel}</h3>
               </div>
 
               <div className="ms-compare-card__metric">
@@ -259,11 +161,9 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
               <p className="ms-compare-card__formula">15 min × {teamSize} devs × 5 days</p>
 
               <ul>
-                {COMPARISON_PAIN_POINTS.map((item) => (
+                {comparison.painPoints.map((item) => (
                   <li key={item}>
-                    <span className="ms-compare-card__cross" aria-hidden="true">
-                      ✗
-                    </span>
+                    <span className="ms-compare-card__cross" aria-hidden="true">{"\u2717"}</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -273,7 +173,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
             <article className="ms-compare-card ms-compare-card--positive">
               <div className="ms-compare-card__header">
                 <p>Automated reports</p>
-                <h3>With Gitmore</h3>
+                <h3>{comparison.withLabel}</h3>
               </div>
 
               <div className="ms-compare-card__metric">
@@ -284,7 +184,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
               <p className="ms-compare-card__formula">~2 min/day × 5 days · Same for 1 or 100 devs</p>
 
               <ul>
-                {COMPARISON_BENEFITS.map((item) => (
+                {comparison.benefits.map((item) => (
                   <li key={item}>
                     <CheckIcon />
                     <span>{item}</span>
@@ -299,7 +199,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
               Save <strong>{formatMinutes(manualMinutes)}</strong> every week — that's <strong>{yearlyHours}+ hours</strong> per year
             </p>
 
-            <a className="ms-button ms-button--primary" href="https://app.gitmore.io" target="_blank" rel="noreferrer">
+            <a className="ms-button ms-button--primary" href={urls.app} target="_blank" rel="noreferrer">
               Get started free
             </a>
           </div>
@@ -315,7 +215,7 @@ export function HowItWorksSection() {
       <div className="ms-container ms-container--narrow">
         <SectionIntro
           eyebrow="How it works"
-          title="Seriously, it's that "
+          title={"Seriously, it\u2019s that "}
           accent="simple"
           accentItalic
           subtitle={'No complicated onboarding. No sales calls. No "enterprise setup wizard."'}
@@ -323,7 +223,7 @@ export function HowItWorksSection() {
 
         <div className="ms-panel ms-steps">
           <div className="ms-steps__grid">
-            {HOW_IT_WORKS_STEPS.map((step) => (
+            {howItWorks.steps.map((step) => (
               <article key={step.number} className="ms-step-card">
                 <span className="ms-step-card__number">{step.number}</span>
                 <h3>{step.title}</h3>
@@ -335,7 +235,7 @@ export function HowItWorksSection() {
           <div className="ms-steps__footer">
             <p>Ready to automate your team updates?</p>
 
-            <a className="ms-button ms-button--primary" href="https://app.gitmore.io" target="_blank" rel="noreferrer">
+            <a className="ms-button ms-button--primary" href={urls.app} target="_blank" rel="noreferrer">
               Get started free
             </a>
           </div>
@@ -359,7 +259,7 @@ function ConnectPreview() {
 
   return (
     <div className="ms-window">
-      <WindowChrome title="app.gitmore.io/integrations" icon="lock" />
+      <WindowChrome title={previewTitles.integrations} icon="lock" />
 
       <div className="ms-window__body">
         <p className="ms-preview-label">Connect your repositories</p>
@@ -415,13 +315,13 @@ function ConnectPreview() {
 function ReportsPreview() {
   return (
     <div className="ms-window">
-      <WindowChrome title="mail.google.com" icon="mail" />
+      <WindowChrome title={previewTitles.mail} icon="mail" />
 
       <div className="ms-window__body ms-window__body--tight">
         <div className="ms-mail-meta">
           <div className="ms-mail-meta__row">
             <span className="ms-mail-meta__label">From:</span>
-            <strong className="ms-mail-meta__value">reports@gitmore.io</strong>
+            <strong className="ms-mail-meta__value">{urls.reportsEmail}</strong>
           </div>
           <div className="ms-mail-meta__row">
             <span className="ms-mail-meta__label">Subject:</span>
@@ -437,7 +337,7 @@ function ReportsPreview() {
           <p>
             <strong>John</strong> worked on enhancing user interactions with the new authentication flow, while <strong>Sarah</strong> optimized the database queries, improving performance by 40%.
           </p>
-          <p className="ms-mail-body__footer">Keep up the great work! 🚀</p>
+          <p className="ms-mail-body__footer">{"Keep up the great work! \uD83D\uDE80"}</p>
         </div>
       </div>
     </div>
@@ -469,15 +369,15 @@ function MonitoringPreview() {
       count: 2,
       tone: "green",
       cards: [
-        { title: "Auth refactor", meta: "MJ ✓" },
-        { title: "Update deps", meta: "LW ✓" },
+        { title: "Auth refactor", meta: "MJ \u2713" },
+        { title: "Update deps", meta: "LW \u2713" },
       ],
     },
   ];
 
   return (
     <div className="ms-window">
-      <WindowChrome title="app.gitmore.io/board" icon="lock" />
+      <WindowChrome title={previewTitles.board} icon="lock" />
 
       <div className="ms-board-grid">
         {columns.map((column) => (
@@ -522,7 +422,7 @@ function ChatPreview() {
 
   return (
     <div className="ms-window">
-      <WindowChrome title="app.gitmore.io/chat" icon="chat" />
+      <WindowChrome title={previewTitles.chat} icon="chat" />
 
       <div className="ms-chat-thread">
         {messages.map((message, index) => (
@@ -570,15 +470,15 @@ export function DetailedFeaturesSection({ activeFeature, onFeatureChange, featur
         <SectionIntro
           eyebrow="Features"
           title="Let's dive into "
-          accent="Gitmore"
+          accent={brand.name}
           accentItalic
           subtitle="Explore each feature in detail with visual examples and real-world use cases."
         />
 
         <div className="ms-feature-layout">
           <div className="ms-feature-nav-wrap">
-            <nav className="ms-feature-nav" aria-label="Gitmore feature walkthrough">
-              {FEATURES.map((feature, index) => (
+            <nav className="ms-feature-nav" aria-label={`${brand.name} feature walkthrough`}>
+              {features.map((feature, index) => (
                 <button
                   key={feature.id}
                   type="button"
@@ -593,7 +493,7 @@ export function DetailedFeaturesSection({ activeFeature, onFeatureChange, featur
           </div>
 
           <div className="ms-feature-stack">
-            {FEATURES.map((feature, index) => (
+            {features.map((feature, index) => (
               <article
                 key={feature.id}
                 ref={(node) => {
@@ -621,11 +521,11 @@ export function DetailedFeaturesSection({ activeFeature, onFeatureChange, featur
                   <FeaturePreview featureId={feature.id} />
                 </div>
 
-                {index === FEATURES.length - 1 ? (
+                {index === features.length - 1 ? (
                   <div className="ms-feature-stage__footer">
                     <p>Ready to automate your team updates?</p>
 
-                    <a className="ms-button ms-button--primary" href="https://app.gitmore.io" target="_blank" rel="noreferrer">
+                    <a className="ms-button ms-button--primary" href={urls.app} target="_blank" rel="noreferrer">
                       Get started free
                     </a>
                   </div>
@@ -651,26 +551,10 @@ export function UseCasesSection() {
 
         <div className="ms-panel ms-use-cases">
           <div className="ms-use-cases__grid">
-            {USE_CASES.map((useCase, index) => (
-              <a key={useCase.title} className={cx("ms-use-case-card", index === 0 && "is-first")} href={
-                useCase.title === "Developers"
-                  ? "/use-case/developer-productivity-reports"
-                  : useCase.title === "Engineering Managers"
-                    ? "/use-case/engineering-manager-reports"
-                    : useCase.title === "Product Managers"
-                      ? "/use-case/sprint-reports"
-                      : "/use-case/standup-reports"
-              }>
+            {useCases.map((useCase, index) => (
+              <a key={useCase.title} className={cx("ms-use-case-card", index === 0 && "is-first")} href={useCase.href}>
                 <div className="ms-use-case-card__header">
-                  <span className="ms-use-case-card__badge" aria-hidden="true">
-                    {useCase.title === "Developers"
-                      ? "👨‍💻"
-                      : useCase.title === "Engineering Managers"
-                        ? "📊"
-                        : useCase.title === "Product Managers"
-                          ? "🎯"
-                          : "🚀"}
-                  </span>
+                  <span className="ms-use-case-card__badge" aria-hidden="true">{useCase.emoji}</span>
                   <div>
                     <h3>{useCase.title}</h3>
                     <p className="ms-use-case-card__tagline">{useCase.tagline}</p>
@@ -693,7 +577,7 @@ export function UseCasesSection() {
         </div>
 
         <div className="ms-panel ms-stats">
-          {USE_CASE_STATS.map((stat) => (
+          {useCaseStats.map((stat) => (
             <div key={stat.label} className="ms-stats__item">
               <strong>{stat.value}</strong>
               <span>{stat.label}</span>

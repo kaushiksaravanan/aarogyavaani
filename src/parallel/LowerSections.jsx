@@ -1,174 +1,15 @@
 import { useState } from "react";
+import {
+  brand,
+  urls,
+  social,
+  badges,
+  legal,
+  pricingPlans,
+  faqItems,
+  footerGroups,
+} from "../siteConfig";
 import "./lower-sections.css";
-
-const PRICING_PLANS = [
-  {
-    name: "Free",
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    description: "Perfect for getting started with Gitmore",
-    features: ["1 integration", "50 AI credits/month", "Leaderboard access"],
-    cta: "Get Started",
-    popular: false,
-    isFree: true,
-  },
-  {
-    name: "Pro",
-    monthlyPrice: 8.99,
-    yearlyPrice: 89.9,
-    description: "For professional developers and small teams",
-    features: [
-      "5 repositories",
-      "5 automations",
-      "100 AI credits/month",
-      "Leaderboard access",
-      "Monitoring Board",
-    ],
-    cta: "Get Started",
-    popular: true,
-    isFree: false,
-  },
-  {
-    name: "Enterprise",
-    monthlyPrice: 30,
-    yearlyPrice: 300,
-    description: "For teams that need full control",
-    features: [
-      "20 repositories",
-      "20 automations",
-      "500 AI credits/month",
-      "Leaderboard access",
-      "Monitoring Board",
-      "Custom Automations",
-    ],
-    cta: "Get Started",
-    popular: false,
-    isFree: false,
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    question: "Which repositories and platforms do you support?",
-    answer:
-      "We support GitHub, GitLab, and Bitbucket - including both cloud-hosted and self-hosted/enterprise versions. You can connect private and public repositories. We work with GitHub.com, GitHub Enterprise, GitLab.com, self-hosted GitLab, Bitbucket Cloud, and Bitbucket Server.",
-  },
-  {
-    question: "What tools integrate GitHub with Slack for team reporting?",
-    answer:
-      "Gitmore integrates with both GitHub and Slack to deliver automated team reports. Unlike basic GitHub-Slack integrations that just forward notifications, Gitmore uses AI to aggregate and summarize all activity into meaningful reports - daily digests, weekly summaries, or custom schedules - delivered directly to your Slack channels.",
-  },
-  {
-    question: "How can CTOs get visibility into engineering progress?",
-    answer:
-      "Gitmore gives CTOs and engineering leaders high-level visibility across all repositories without requiring manual reports from team leads. You get AI-generated summaries of development velocity, what features shipped, blockers, and team contributions - all extracted automatically from Git activity and delivered on your schedule.",
-  },
-  {
-    question: "How do I connect my GitHub repository to Gitmore?",
-    answer:
-      "You can connect GitHub repositories in two ways: 1) OAuth integration - sign in with GitHub and select repositories to connect automatically, or 2) Manual webhook setup - add a webhook URL to your repository settings. Both methods take under 2 minutes and you'll start receiving data immediately.",
-  },
-  {
-    question: "How does the AI analysis work and what insights do I get?",
-    answer:
-      "Our LLM analyzes webhook event metadata including commit messages, pull request descriptions, file names, and author information to categorize work into features, bug fixes, refactoring, documentation, and more. You'll receive intelligent summaries of team progress, development velocity metrics, and project insights via email or Slack - all without accessing your actual source code.",
-  },
-  {
-    question: "What is Gitmind and how does it help?",
-    answer:
-      "Gitmind is Gitmore's AI chat agent that lets you ask questions about your repository activity in natural language. You can ask things like 'What did the team ship last week?', 'Show me all bug fixes in the last month', or 'Who worked on the authentication feature?' - and get instant, accurate answers based on your Git history.",
-  },
-  {
-    question: "How secure are webhook integrations?",
-    answer:
-      "We implement enterprise-grade security measures including webhook signature verification. All webhook payloads are validated and processed in isolated environments. We only access event metadata (commit messages, PR titles, author info, timestamps) - never your actual source code or code changes. This ensures complete privacy of your codebase while providing valuable development insights.",
-  },
-  {
-    question: "Does Gitmore access my source code?",
-    answer:
-      "No, Gitmore never accesses your source code. We only receive and process webhook event metadata - commit messages, PR titles and descriptions, author information, file names, and timestamps. Your actual code changes, file contents, and repository files remain completely private and are never transmitted to our servers.",
-  },
-  {
-    question: "Is there a free plan available?",
-    answer:
-      "Yes, Gitmore offers a free forever plan that includes 1 repository integration, 50 AI credits/month, and Leaderboard access. No credit card required. Upgrade anytime to unlock more repositories, automations, and features.",
-  },
-  {
-    question: "Can I cancel or downgrade my plan at any time?",
-    answer:
-      "Yes, you can cancel or downgrade your plan at any time from your account settings. There are no long-term contracts or cancellation fees. If you downgrade, you'll retain access to your current plan until the end of your billing period.",
-  },
-];
-
-const FOOTER_GROUPS = [
-  {
-    title: "Product",
-    links: [
-      { label: "Features", href: "/#features" },
-      { label: "Pricing", href: "/#pricing" },
-      { label: "How it works", href: "/#how-it-works" },
-      { label: "FAQ", href: "/#faq" },
-      { label: "Blog", href: "/blog" },
-      { label: "Resources", href: "/resources" },
-    ],
-  },
-  {
-    title: "Solutions",
-    links: [
-      { label: "GitHub Reporting", href: "/git-reporting/tool/github" },
-      { label: "GitLab Reporting", href: "/git-reporting/tool/gitlab" },
-      { label: "Bitbucket Reporting", href: "/git-reporting/tool/bitbucket" },
-    ],
-  },
-  {
-    title: "Use Cases",
-    links: [
-      { label: "Standup Reports", href: "/use-case/standup-reports" },
-      { label: "Sprint Reports", href: "/use-case/sprint-reports" },
-      { label: "Productivity Reports", href: "/use-case/developer-productivity-reports" },
-      { label: "Manager Reports", href: "/use-case/engineering-manager-reports" },
-      { label: "Async Standups", href: "/use-case/async-standups" },
-      { label: "CTO Visibility", href: "/use-case/cto-engineering-visibility" },
-    ],
-  },
-  {
-    title: "Compare",
-    links: [
-      { label: "Geekbot Alternative", href: "/alternative/geekbot" },
-      { label: "LinearB Alternative", href: "/alternative/linearb" },
-      { label: "Keypup Alternative", href: "/alternative/keypup" },
-      { label: "Swarmia Alternative", href: "/alternative/swarmia" },
-      { label: "Standuply Alternative", href: "/alternative/standuply" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About", href: "/about" },
-      { label: "Contact", href: "/contact" },
-      { label: "Privacy Policy", href: "/privacy-policy" },
-      { label: "Terms of Service", href: "/terms" },
-    ],
-  },
-];
-
-const BADGES = [
-  {
-    alt: "Gitmore on Product Hunt",
-    href: "https://www.producthunt.com/products/gitmore?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-gitmore",
-    src: "https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1006218&theme=neutral",
-  },
-  {
-    alt: "Gitmore on Peerlist",
-    href: "https://peerlist.io/hamaabidi/project/gitmore",
-    src: "https://dqy38fnwh4fqs.cloudfront.net/website/project-spotlight/project-week-rank-three-light.svg",
-  },
-  {
-    alt: "Gitmore on SaaSHub",
-    href: "https://www.saashub.com/gitmore?utm_source=badge&utm_campaign=badge&utm_content=gitmore&badge_variant=color&badge_kind=approved",
-    src: "https://cdn-b.saashub.com/img/badges/approved-color.png?v=1",
-  },
-];
 
 function formatPrice(value) {
   if (value === 0) {
@@ -188,7 +29,7 @@ function getSavings(plan) {
 }
 
 function CheckIcon() {
-  return <span aria-hidden="true" className="lower-sections__check-icon">✓</span>;
+  return <span aria-hidden="true" className="lower-sections__check-icon">{"\u2713"}</span>;
 }
 
 function XIcon() {
@@ -242,7 +83,7 @@ function PricingCard({ plan, yearlyBilling }) {
         ))}
       </ul>
 
-      <a href="https://app.gitmore.io" target="_blank" rel="noopener noreferrer" className={`lower-sections__button lower-sections__button--full${plan.popular ? " lower-sections__button--inverted" : " lower-sections__button--muted"}`}>
+      <a href={urls.app} target="_blank" rel="noopener noreferrer" className={`lower-sections__button lower-sections__button--full${plan.popular ? " lower-sections__button--inverted" : " lower-sections__button--muted"}`}>
         {plan.cta}
       </a>
 
@@ -300,7 +141,7 @@ export function PricingSection({ yearlyBilling: controlledYearlyBilling, setYear
         </div>
 
         <div className="lower-plan-grid">
-          {PRICING_PLANS.map((plan) => (
+          {pricingPlans.map((plan) => (
             <PricingCard key={plan.name} plan={plan} yearlyBilling={yearlyBilling} />
           ))}
         </div>
@@ -326,16 +167,16 @@ export function FaqSection({ openFaq: controlledOpenFaq, setOpenFaq: controlledS
               <br />
               questions
             </h2>
-            <p>Everything you need to know about Gitmore.</p>
+            <p>Everything you need to know about {brand.name}.</p>
             <div className="lower-faq-copy__contact">
               <p>
-                Have another question? Contact us on <a href="https://x.com/gitmore_io" target="_blank" rel="noopener noreferrer">X (Twitter)</a> or by <a href="mailto:support@gitmore.io">email</a>.
+                Have another question? Contact us on <a href={social.twitter.url} target="_blank" rel="noopener noreferrer">{social.twitter.label}</a> or by <a href={`mailto:${urls.supportEmail}`}>email</a>.
               </p>
             </div>
           </div>
 
           <div className="lower-faq-list" role="list">
-            {FAQ_ITEMS.map((item, index) => {
+            {faqItems.map((item, index) => {
               const isOpen = openFaq === index;
 
               return (
@@ -376,7 +217,7 @@ export function FinalCtaSection() {
           <p>
             We're confident you'll love it. But if you don't? Just cancel. No hard feelings. No "let's schedule a call to discuss your experience" emails.
           </p>
-          <a href="https://app.gitmore.io/" target="_blank" rel="noopener noreferrer" className="lower-sections__button lower-sections__button--dark">
+          <a href={`${urls.app}/`} target="_blank" rel="noopener noreferrer" className="lower-sections__button lower-sections__button--dark">
             Get started
           </a>
         </div>
@@ -392,16 +233,16 @@ export function LowerSectionsFooter() {
         <div className="lower-footer__main">
           <div className="lower-footer__brand-block">
             <a className="lower-footer__brand" href="/">
-              Gitmore
+              {brand.name}
             </a>
             <p>
-              Automated reporting and insights for your engineering team. To contact us, please email at{" "}
-              <a className="lower-footer__inline-link" href="mailto:support@gitmore.io">
-                support@gitmore.io
+              {brand.tagline} To contact us, please email at{" "}
+              <a className="lower-footer__inline-link" href={`mailto:${urls.supportEmail}`}>
+                {urls.supportEmail}
               </a>
             </p>
             <div className="lower-footer__badges">
-              {BADGES.map((badge) => (
+              {badges.map((badge) => (
                 <a key={badge.alt} href={badge.href} target="_blank" rel="noopener noreferrer">
                   <img src={badge.src} alt={badge.alt} loading="lazy" />
                 </a>
@@ -410,7 +251,7 @@ export function LowerSectionsFooter() {
           </div>
 
           <div className="lower-footer__nav-grid">
-            {FOOTER_GROUPS.map((group) => (
+            {footerGroups.map((group) => (
               <div key={group.title} className="lower-footer__group">
                 <h3>{group.title}</h3>
                 <nav>
@@ -426,14 +267,14 @@ export function LowerSectionsFooter() {
         </div>
 
         <div className="lower-footer__bottom">
-          <p>© 2026 Gitmore. All rights reserved.</p>
+          <p>{legal.copyright}</p>
           <div className="lower-footer__socials">
-            <a href="https://x.com/gitmore_io" target="_blank" rel="noopener noreferrer" aria-label="Gitmore on X (Twitter)">
-              <span className="sr-only">Gitmore on X (Twitter)</span>
+            <a href={social.twitter.url} target="_blank" rel="noopener noreferrer" aria-label={`${brand.name} on ${social.twitter.label}`}>
+              <span className="sr-only">{brand.name} on {social.twitter.label}</span>
               <XIcon />
             </a>
-            <a href="https://www.linkedin.com/company/gitmore/" target="_blank" rel="noopener noreferrer" aria-label="Gitmore on LinkedIn">
-              <span className="sr-only">Gitmore on LinkedIn</span>
+            <a href={social.linkedin.url} target="_blank" rel="noopener noreferrer" aria-label={`${brand.name} on ${social.linkedin.label}`}>
+              <span className="sr-only">{brand.name} on {social.linkedin.label}</span>
               <LinkedInIcon />
             </a>
           </div>
@@ -441,7 +282,7 @@ export function LowerSectionsFooter() {
       </div>
 
       <div className="lower-footer__wordmark-wrap" aria-hidden="true">
-        <h2 className="lower-footer__wordmark">gitmore.io</h2>
+        <h2 className="lower-footer__wordmark">{brand.domain}</h2>
       </div>
     </footer>
   );

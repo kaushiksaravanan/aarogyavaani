@@ -1,15 +1,9 @@
 import { useEffect, useState } from "react";
+import { brand, navLinks, urls } from "../siteConfig";
 import "./02-header.css";
 
-const NAV_LINKS = [
-  { label: "Features", href: "/#features" },
-  { label: "Use Cases", href: "/#use-cases" },
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "Pricing", href: "/#pricing" },
-];
-
-function GitmoreMark() {
-  return <img src="/logo.png" alt="" aria-hidden="true" className="parallel15-header__logo-mark" />;
+function LogoMark() {
+  return <img src={brand.logo} alt="" aria-hidden="true" className="parallel15-header__logo-mark" />;
 }
 
 function MenuIcon() {
@@ -40,7 +34,7 @@ function CloseIcon() {
   );
 }
 
-export default function Parallel15Header02() {
+export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -77,13 +71,13 @@ export default function Parallel15Header02() {
     <>
       <header className="parallel15-header">
         <div className="parallel15-header__inner">
-          <a className="parallel15-header__brand" href="/" aria-label="gitmore.io home">
-            <GitmoreMark />
-            <span>gitmore.io</span>
+          <a className="parallel15-header__brand" href="/" aria-label={`${brand.domain} home`}>
+            <LogoMark />
+            <span>{brand.domain}</span>
           </a>
 
           <nav className="parallel15-header__nav" aria-label="Primary">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <a key={link.label} href={link.href}>
                 {link.label}
               </a>
@@ -93,7 +87,7 @@ export default function Parallel15Header02() {
           <div className="parallel15-header__actions">
             <a
               className="parallel15-header__cta"
-              href="https://app.gitmore.io"
+              href={urls.app}
               target="_blank"
               rel="noreferrer"
             >
@@ -125,7 +119,7 @@ export default function Parallel15Header02() {
         className={`parallel15-header__mobile${mobileOpen ? " is-open" : ""}`}
       >
         <nav className="parallel15-header__mobile-nav" aria-label="Mobile primary">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <a key={link.label} href={link.href} onClick={() => setMobileOpen(false)}>
               {link.label}
             </a>
@@ -134,7 +128,7 @@ export default function Parallel15Header02() {
 
         <a
           className="parallel15-header__mobile-cta"
-          href="https://app.gitmore.io"
+          href={urls.app}
           target="_blank"
           rel="noreferrer"
           onClick={() => setMobileOpen(false)}

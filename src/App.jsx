@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CloneHero } from "./parallel/HeroTop";
+import ErrorBoundary from "./ErrorBoundary";
+import { useAnalytics } from "./analytics";
+import { HeroSection } from "./parallel/HeroTop";
 import MiddleSections from "./parallel/MiddleSections";
 import LowerSections from "./parallel/LowerSections";
-import Parallel15Header from "./parallel15/02-header";
+import SiteHeader from "./parallel15/02-header";
 import {
   MarketingPage,
   BlogIndexPage,
@@ -87,13 +89,13 @@ function HomePage() {
   const [openFaq, setOpenFaq] = useState(null);
 
   return (
-    <div className="app-shell app-shell--gitmore">
+    <div className="app-shell">
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <Parallel15Header />
+      <SiteHeader />
       <main id="main-content">
-        <CloneHero />
+        <HeroSection />
         <MiddleSections />
         <LowerSections
           yearlyBilling={yearlyBilling}
@@ -107,6 +109,8 @@ function HomePage() {
 }
 
 function AppRoutes() {
+  useAnalytics();
+
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
@@ -191,8 +195,10 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

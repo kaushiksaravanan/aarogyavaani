@@ -1,15 +1,5 @@
+import { brand, urls, hero } from "../siteConfig";
 import "./hero-top.css";
-
-const HEADER_LINKS = [
-  { label: "Features", href: "/#features" },
-  { label: "Use Cases", href: "/#use-cases" },
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "Pricing", href: "/#pricing" },
-];
-
-function GitmoreMark() {
-  return <img src="/logo.png" alt="" aria-hidden="true" className="hero-top__logo-mark" />;
-}
 
 function MailIcon() {
   return (
@@ -34,32 +24,7 @@ function MailIcon() {
   );
 }
 
-export function CloneHeader() {
-  return (
-    <header className="hero-top-header">
-      <div className="hero-top-header__inner">
-        <a className="hero-top-header__brand" href="/" aria-label="Gitmore home">
-          <GitmoreMark />
-            <span>gitmore.io</span>
-          </a>
-
-        <nav className="hero-top-header__nav" aria-label="Primary">
-          {HEADER_LINKS.map((link) => (
-            <a key={link.label} href={link.href}>
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        <a className="hero-top-header__cta" href="https://app.gitmore.io" target="_blank" rel="noreferrer">
-          Get Started
-        </a>
-      </div>
-    </header>
-  );
-}
-
-export function CloneHero() {
+export function HeroSection() {
   return (
     <section className="hero-top-hero" id="top">
       <div className="hero-top-hero__grain" aria-hidden="true">
@@ -69,44 +34,43 @@ export function CloneHero() {
       <div className="hero-top-hero__inner">
         <div className="hero-top-hero__copy">
           <h1>
-            <span>Git Reporting</span> Tool
+            <span>{hero.headline.line1.accent}</span>{hero.headline.line1.post}
             <br />
-            Keep <span>Everyone</span> Updated
+            {hero.headline.line2.pre}<span>{hero.headline.line2.accent}</span>{hero.headline.line2.post}
           </h1>
 
-          <p className="hero-top-hero__lede">
-            Turns your commits and PRs into clear team updates delivered daily or weekly to Slack or
-            email.
-          </p>
+          <p className="hero-top-hero__lede">{hero.lede}</p>
 
           <p className="hero-top-hero__supporting">
-            Works with <strong>GitHub</strong>, <strong>GitLab</strong>, and <strong>Bitbucket</strong>.
+            Works with {brand.platforms.map((p, i) => (
+              <span key={p}>{i > 0 && (i === brand.platforms.length - 1 ? ", and " : ", ")}<strong>{p}</strong></span>
+            ))}.
           </p>
 
           <div className="hero-top-hero__actions">
             <a
               className="hero-top-hero__button hero-top-hero__button--primary"
-              href="https://app.gitmore.io"
+              href={urls.app}
               target="_blank"
               rel="noreferrer"
             >
               Get Started Free
             </a>
-            <a className="hero-top-hero__button hero-top-hero__button--secondary" href="/example.html">
+            <a className="hero-top-hero__button hero-top-hero__button--secondary" href={urls.demoReport}>
               <MailIcon />
               <span>View Demo Report</span>
             </a>
           </div>
 
-          <p className="hero-top-hero__meta">No credit card required</p>
+          <p className="hero-top-hero__meta">{hero.meta}</p>
         </div>
 
         <div className="hero-top-hero__demo">
           <div className="hero-top-hero__frame">
             <div className="hero-top-hero__embed">
               <iframe
-                src="/hero-demo.html"
-                title="Connect a GitHub Repository and Set Up Automated Email Updates"
+                src={urls.heroDemo}
+                title={hero.demoTitle}
                 frameBorder="0"
                 loading="lazy"
                 allowFullScreen

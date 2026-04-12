@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import Parallel15Header from "./parallel15/02-header";
+import { brand, urls } from "./siteConfig";
+import SiteHeader from "./parallel15/02-header";
 import { LowerSectionsFooter } from "./parallel/LowerSections";
 
 const EMAIL_ONLY_RE = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
@@ -13,7 +14,7 @@ function usePageMeta(title, description, appendBrand = true) {
     const meta = document.querySelector('meta[name="description"]');
     const previousDescription = meta?.getAttribute("content") ?? "";
 
-    document.title = title ? (appendBrand ? `${title} | gitmore.io` : title) : "gitmore.io";
+    document.title = title ? (appendBrand ? `${title} | ${brand.domain}` : title) : brand.domain;
 
     if (meta && description) {
       meta.setAttribute("content", description);
@@ -88,7 +89,7 @@ function renderRichText(text) {
 }
 
 function getChecklistStorageKey(page) {
-  return `gitmore-checklist:${page.slug ?? page.path ?? page.title}`;
+  return `${brand.domain}-checklist:${page.slug ?? page.path ?? page.title}`;
 }
 
 function readStoredChecklistIds(storageKey) {
@@ -126,7 +127,7 @@ function getChecklistItems(sections = []) {
   );
 }
 
-function HeroActions({ ctaLabel = "Get Started Free", ctaHref = "https://app.gitmore.io/", secondaryLabel = "View Demo Report", secondaryHref = "/example.html" }) {
+function HeroActions({ ctaLabel = "Get Started Free", ctaHref = `${urls.app}/`, secondaryLabel = "View Demo Report", secondaryHref = urls.demoReport }) {
   const secondaryIsRoutable = secondaryHref.startsWith("/") && !secondaryHref.endsWith(".html");
 
   return (
@@ -235,7 +236,7 @@ function ComparisonTable({ comparison }) {
     <section className="content-page__comparison-wrap">
       <SectionIntro
         kicker="Comparison"
-        title={comparison.title ?? (comparison.headers?.length ? "Gitmore vs alternatives" : null)}
+        title={comparison.title ?? (comparison.headers?.length ? `${brand.name} vs alternatives` : null)}
         description={comparison.description}
       />
       <table className="content-page__comparison">
@@ -324,7 +325,7 @@ function ContentPage({
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <Parallel15Header />
+      <SiteHeader />
       <main id="main-content">
         <section className="content-page__hero">
           <div className="content-page__hero-inner">
@@ -360,7 +361,7 @@ export function MarketingPage({ page }) {
           <SectionIntro title={page.finalCta.title} description={page.finalCta.description} />
           <HeroActions
             ctaLabel={page.finalCta.ctaLabel ?? "Get Started Free"}
-            ctaHref={page.finalCta.ctaHref ?? "https://app.gitmore.io/"}
+            ctaHref={page.finalCta.ctaHref ?? `${urls.app}/`}
             secondaryLabel={page.finalCta.secondaryLabel ?? "View Demo Report"}
             secondaryHref={page.finalCta.secondaryHref ?? "/example.html"}
           />
@@ -375,8 +376,8 @@ export function BlogIndexPage({ posts }) {
 
   return (
     <ContentPage
-      metaTitle="Blog - Git Reporting Tips, Guides & Stories | Gitmore"
-      title="The Gitmore Blog"
+      metaTitle={`Blog - Git Reporting Tips, Guides & Stories | ${brand.name}`}
+      title={`The ${brand.name} Blog`}
       description="Tips, guides & stories about git reporting, developer productivity, and keeping your engineering team in sync."
       eyebrow={null}
       lead={null}
@@ -411,7 +412,7 @@ export function BlogArticlePage({ post, relatedPosts = [] }) {
       lead={post.lead}
       sections={post.sections}
       actions={false}
-      heroMeta={`${post.date} · ${post.readTime} · Gitmore Team`}
+      heroMeta={`${post.date} · ${post.readTime} · ${brand.name} Team`}
       breadcrumbs={[
         { label: "Home", to: "/" },
         { label: "Blog", to: "/blog" },
@@ -428,7 +429,7 @@ export function BlogArticlePage({ post, relatedPosts = [] }) {
         ]}
       />
       <section className="content-page__section content-page__cta-band">
-        <SectionIntro title="Try Gitmore for free" description="Automated git reports for your engineering team. Set up in 2 minutes, no credit card required." />
+        <SectionIntro title={`Try ${brand.name} for free`} description="Automated git reports for your engineering team. Set up in 2 minutes, no credit card required." />
         <HeroActions secondaryLabel="Back to Blog" secondaryHref="/blog" />
       </section>
     </ContentPage>
@@ -514,7 +515,7 @@ export function ChecklistPage({ page, relatedPages = [] }) {
           <span style={{ width: `${checklistProgress}%` }} />
         </div>
         <div className="content-page__progress-actions">
-          <a className="button button--small button--ghost content-page__download-link" href={checklistCsvHref} download={`${page.slug ?? "gitmore-checklist"}.csv`}>
+          <a className="button button--small button--ghost content-page__download-link" href={checklistCsvHref} download={`${page.slug ?? `${brand.domain}-checklist`}.csv`}>
             Download CSV
           </a>
           <button type="button" className="button button--small button--ghost" disabled={!completedChecklistCount} onClick={resetChecklistProgress}>
@@ -565,7 +566,7 @@ export function ResourceArticlePage({ page, typeLabel, relatedPages = [] }) {
       ) : null}
       <RelatedLinks title={typeLabel === "Glossary" ? "Related" : "More Templates"} items={page.related ?? relatedPages} />
       <section className="content-page__section content-page__cta-band">
-        <SectionIntro title={typeLabel === "Glossary" ? "Track DORA Metrics Automatically" : "Automate Your Git Reporting"} description="Gitmore turns your git activity into automated reports delivered to Slack and email." />
+        <SectionIntro title={typeLabel === "Glossary" ? "Track DORA Metrics Automatically" : "Automate Your Git Reporting"} description={`${brand.name} turns your git activity into automated reports delivered to Slack and email.`} />
         <HeroActions />
       </section>
     </ContentPage>
@@ -575,7 +576,7 @@ export function ResourceArticlePage({ page, typeLabel, relatedPages = [] }) {
 export function ResourcesPage({ checklists, templates, glossary, allPostsCount }) {
   return (
     <ContentPage
-      metaTitle="Developer Resources: Templates, Checklists & Guides | Gitmore"
+      metaTitle={`Developer Resources: Templates, Checklists & Guides | ${brand.name}`}
       title="Engineering Resources"
       description="Checklists, templates, and practical guides for engineering teams setting up workflows, reporting, and communication."
       eyebrow={null}
@@ -665,7 +666,7 @@ export function NotFoundPage() {
       <RelatedLinks
         title="Popular routes"
         items={[
-          { title: "Homepage", to: "/", body: "Return to the main Gitmore landing page." },
+          { title: "Homepage", to: "/", body: `Return to the main ${brand.name} landing page.` },
           { title: "Blog", to: "/blog", body: "Browse blog guides and comparison content." },
           { title: "Resources", to: "/resources", body: "Open templates, checklists, and glossary content." },
           { title: "GitHub Reports", to: "/git-reporting/tool/github", body: "See the main GitHub reporting page." },
