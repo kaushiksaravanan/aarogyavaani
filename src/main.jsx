@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import "./styleGuide.css";
 import "./fonts.css";
 import "./parallel/hero-top.css";
 import "./parallel/middle-sections.css";

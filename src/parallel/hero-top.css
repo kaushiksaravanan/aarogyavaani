@@ -1,7 +1,7 @@
 .hero-top-header,
 .hero-top-hero {
-  color: #fff;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--panel-light);
+  font-family: var(--font-family-body);
 }
 
 .hero-top-header {
@@ -30,8 +30,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  color: #fff;
-  font-family: "Instrument Serif", Georgia, serif;
+  color: var(--panel-light);
+  font-family: var(--font-family-heading);
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -41,7 +41,7 @@
 .hero-top__logo-mark {
   width: 2.25rem;
   height: 2.25rem;
-  color: #fff;
+  color: var(--panel-light);
   flex: 0 0 auto;
 }
 
@@ -53,9 +53,12 @@
 
 .hero-top-header__nav a,
 .hero-top-header__cta {
-  color: rgba(255, 255, 255, 0.94);
+  color: var(--white-alpha-94);
   text-decoration: none;
-  transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+  transition:
+    color var(--motion-button-hover) var(--motion-ease-standard),
+    background var(--motion-button-hover) var(--motion-ease-standard),
+    transform var(--motion-button-hover) var(--motion-ease-standard);
 }
 
 .hero-top-header__nav a {
@@ -64,7 +67,7 @@
 
 .hero-top-header__nav a:hover,
 .hero-top-header__cta:hover {
-  color: #fff;
+  color: var(--panel-light);
 }
 
 .hero-top-header__cta {
@@ -74,16 +77,16 @@
   min-height: 2.75rem;
   padding: 0.7rem 1.1rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--panel-light);
   color: #130d09;
   font-size: 0.95rem;
   font-weight: 600;
 }
 
 .hero-top-header__cta:hover {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--white-alpha-92);
   color: #130d09;
-  transform: translateY(-1px);
+  transform: translateY(var(--motion-distance-button));
 }
 
 .hero-top-hero {
@@ -91,7 +94,7 @@
   overflow: hidden;
   padding: 11.35rem 0 3.5rem;
   background:
-    radial-gradient(circle at 50% -10%, rgba(247, 216, 148, 0.22), transparent 26%),
+    radial-gradient(circle at 50% -10%, hsl(var(--brand-primary-light) / 0.22), transparent 26%),
     linear-gradient(180deg, #3c2818 0%, #271a10 50%, #1b130d 100%);
 }
 
@@ -109,10 +112,10 @@
   width: 100%;
   height: 100%;
   background:
-    radial-gradient(circle at 18% 0%, rgba(208, 134, 30, 0.16), transparent 28%),
-    radial-gradient(circle at 50% 0%, rgba(252, 230, 167, 0.14), transparent 30%),
-    radial-gradient(circle at 82% 0%, rgba(208, 134, 30, 0.14), transparent 28%),
-    repeating-linear-gradient(140deg, rgba(255, 255, 255, 0.012) 0 12px, transparent 12px 34px),
+    radial-gradient(circle at 18% 0%, hsl(var(--brand-primary-vivid) / 0.16), transparent 28%),
+    radial-gradient(circle at 50% 0%, hsl(var(--brand-primary-light) / 0.14), transparent 30%),
+    radial-gradient(circle at 82% 0%, hsl(var(--brand-primary-vivid) / 0.14), transparent 28%),
+    repeating-linear-gradient(140deg, hsl(0 0% 100% / 0.012) 0 12px, transparent 12px 34px),
     radial-gradient(circle at 50% 0%, rgba(7, 11, 16, 0.28), transparent 60%);
   opacity: 1;
 }
@@ -130,8 +133,8 @@
 
 .hero-top-hero h1 {
   margin: 0;
-  color: #fff;
-  font-family: "Instrument Serif", Georgia, serif;
+  color: var(--panel-light);
+  font-family: var(--font-family-heading);
   font-size: clamp(2.35rem, 5.8vw, 4.3rem);
   font-weight: 400;
   letter-spacing: -0.028em;
@@ -152,19 +155,19 @@
 .hero-top-hero__lede {
   max-width: 42rem;
   margin: 1.8rem auto 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--white-alpha-90);
   font-size: clamp(1rem, 1.9vw, 1.22rem);
   line-height: 1.62;
 }
 
 .hero-top-hero__supporting {
   margin-top: 0.8rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--white-alpha-72);
   font-size: clamp(0.98rem, 1.6vw, 1.04rem);
 }
 
 .hero-top-hero__supporting strong {
-  color: #fff;
+  color: var(--panel-light);
   font-weight: 600;
 }
 
@@ -188,27 +191,31 @@
   text-decoration: none;
   font-size: 1rem;
   font-weight: 500;
-  transition: background 180ms ease, color 180ms ease, transform 180ms ease, border-color 180ms ease;
+  transition:
+    background var(--motion-button-hover) var(--motion-ease-standard),
+    color var(--motion-button-hover) var(--motion-ease-standard),
+    transform var(--motion-button-hover) var(--motion-ease-standard),
+    border-color var(--motion-button-hover) var(--motion-ease-standard);
 }
 
 .hero-top-hero__button--primary {
-  background: #fff;
+  background: var(--panel-light);
   color: #140e09;
 }
 
 .hero-top-hero__button--primary:hover {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--white-alpha-92);
 }
 
 .hero-top-hero__button--secondary {
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--white-alpha-50);
   background: transparent;
-  color: #fff;
+  color: var(--panel-light);
 }
 
 .hero-top-hero__button--secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--white-alpha-10);
+  color: var(--panel-light);
 }
 
 .hero-top__button-icon {
@@ -219,7 +226,7 @@
 
 .hero-top-hero__meta {
   margin-top: 0.9rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--white-alpha-50);
   font-size: 0.75rem;
 }
 
@@ -232,10 +239,10 @@
 .hero-top-hero__frame {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--white-alpha-10);
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  background: var(--white-alpha-05);
+  box-shadow: var(--shadow-dark-frame-soft);
   backdrop-filter: blur(8px);
 }
 

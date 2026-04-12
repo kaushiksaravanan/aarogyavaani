@@ -1,0 +1,629 @@
+/**
+ * STYLE GUIDE - Brand System, Motion System, and Design Intent
+ *
+ * This file does two jobs at once:
+ * 1. It defines reusable CSS tokens consumed across the app.
+ * 2. It documents the reasoning behind the visual system so this repo can be
+ *    reused as a landing-page template without losing its point of view.
+ *
+ * --------------------------------------------------------------------------
+ * CORE PHILOSOPHY
+ * --------------------------------------------------------------------------
+ *
+ * This template is not meant to feel sterile, futuristic, or anonymous.
+ * It is designed to feel:
+ * - trustworthy rather than flashy
+ * - crafted rather than mass-produced
+ * - premium rather than loud
+ * - warm rather than cold
+ * - clear rather than minimal for its own sake
+ *
+ * The palette sits in a warm brown / copper / amber family because that hue
+ * space carries signals of maturity, human judgment, and deliberate craft.
+ * Blue can imply infrastructure and cold efficiency; pure black and white can
+ * feel editorial or severe; saturated neons can feel trend-led. This system
+ * instead aims for "confident warmth": serious enough for SaaS, but human
+ * enough for a founder-led product.
+ *
+ * --------------------------------------------------------------------------
+ * DUAL-MODE ARCHITECTURE
+ * --------------------------------------------------------------------------
+ *
+ * The site uses two environmental modes on purpose.
+ *
+ * 1. Dark warm mode
+ *    Used in hero, header, and high-emphasis CTA areas.
+ *    Psychological role: drama, focus, premium framing, emotional entry.
+ *    The darker field makes the product feel more cinematic and intentional,
+ *    while warm highlights prevent the experience from feeling cold or harsh.
+ *
+ * 2. Light warm mode
+ *    Used in middle and lower content sections.
+ *    Psychological role: readability, trust, explanation, evaluation.
+ *    Once the visitor is interested, the page shifts into a brighter surface
+ *    that reduces cognitive load and supports longer-form scanning.
+ *
+ * The transition between these modes is the persuasion structure of the page:
+ * attract with atmosphere, then explain with clarity.
+ *
+ * --------------------------------------------------------------------------
+ * TOKEN USAGE RULES
+ * --------------------------------------------------------------------------
+ *
+ * - Rebrand by changing the brand palette first.
+ * - Prefer semantic tokens over raw colors in component CSS.
+ * - Use opacity steps intentionally; do not invent random alpha values unless
+ *   a new hierarchy level is truly needed.
+ * - Use motion tiers consistently; timing communicates meaning.
+ * - Keep shadows warm. Neutral black shadows flatten the brand voice.
+ *
+ * --------------------------------------------------------------------------
+ * HSL CONVENTION
+ * --------------------------------------------------------------------------
+ *
+ * Some tokens intentionally store bare HSL triplets rather than full values.
+ * That allows alpha compositing without duplicate definitions.
+ *
+ * Example:
+ *   color: hsl(var(--brand-primary));
+ *   color: hsl(var(--brand-primary) / 0.5);
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---------------------------------------------------------------------- */
+  /* 1. Brand palette                                                       */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * This is the emotional origin of the system.
+   *
+   * The central brand hue is warm copper. It signals value, momentum, and
+   * craftsmanship without becoming aggressive. The supporting neutrals stay in
+   * the same warm family so the entire interface feels coherent, not accented
+   * with a random brand color on top of a generic base.
+   */
+
+  /*
+   * Primary copper.
+   * Role: the main brand signature. This is the color of conviction.
+   * It is warm enough to feel human, dark enough to feel mature, and soft
+   * enough to avoid startup-gimmick energy.
+   */
+  --brand-primary: 28 45% 57%;
+
+  /*
+   * Strong copper.
+   * Role: pressed, hovered, or more committed accent state.
+   * This darker step suggests action becoming more certain.
+   */
+  --brand-primary-strong: 28 49% 49%;
+
+  /*
+   * Vivid amber.
+   * Role: moments that need extra signal, energy, or stage presence.
+   * Used sparingly so that brightness still means emphasis.
+   */
+  --brand-primary-vivid: 30 81% 47%;
+
+  /*
+   * Light gold.
+   * Role: highlight, glow, and atmospheric lift.
+   * This keeps highlights premium and warm rather than clinical.
+   */
+  --brand-primary-light: 45 97% 76%;
+
+  /*
+   * Secondary muted green.
+   * Role: reserve support color for future brand extensions.
+   * Intentionally restrained so it never competes with copper.
+   */
+  --brand-secondary: 100 14% 58%;
+
+  /* Warm dark neutrals for dramatic surfaces and gradients. */
+  --brand-neutral-900: #120b07;
+  --brand-neutral-800: #22160e;
+  --brand-neutral-700: #372515;
+  --brand-neutral-600: #3c2818;
+  --brand-neutral-500: #271a10;
+  --brand-neutral-400: #1e140b;
+  --brand-neutral-300: #1b130d;
+
+  /*
+   * Warm creams for reading surfaces.
+   * None of these are pure paper white by default except where maximum
+   * contrast or crispness is needed. The slight warmth prevents the light mode
+   * from feeling disconnected from the hero.
+   */
+  --brand-cream-50: #ffffff;
+  --brand-cream-100: #fffdf9;
+  --brand-cream-200: #fff8f1;
+  --brand-cream-300: #fcfaf7;
+  --brand-cream-400: #fcf8f3;
+  --brand-cream-500: #f5f4f2;
+  --brand-cream-600: #f2ebe4;
+  --brand-cream-700: #ece4dc;
+  --brand-cream-800: #e1ddd8;
+
+  /*
+   * Feedback colors.
+   * Success stays clean and readable.
+   * Danger exists for utility, but the visual language avoids overusing red so
+   * the site does not feel transactional or error-prone.
+   */
+  --brand-success: #00a544;
+  --brand-success-alt: #0d9f4f;
+  --brand-danger: 0 62.8% 50%;
+
+  /* Third-party marks used in previews. Keep product-native recognition. */
+  --color-github: #24292f;
+  --color-gitlab: #fc6d26;
+  --color-bitbucket: #0052cc;
+  --color-slack: #4a154b;
+  --color-slate: #374151;
+
+  /* Preview board state colors. Functional, not brand-defining. */
+  --color-board-blue-bg: #eff6ff;
+  --color-board-blue-border: rgba(59, 130, 246, 0.22);
+  --color-board-amber-bg: #fffbeb;
+  --color-board-amber-border: rgba(245, 158, 11, 0.22);
+  --color-board-green-bg: #f0fdf4;
+  --color-board-green-border: rgba(34, 197, 94, 0.22);
+
+  /* ---------------------------------------------------------------------- */
+  /* 2. Semantic tokens - dark environment                                  */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * The dark environment is the "high-intent" stage of the site.
+   * Every token below is tuned to preserve legibility while keeping the scene
+   * atmospheric rather than flat.
+   */
+
+  /* Base dark surface: the emotional floor of the brand. */
+  --background: 28 45% 8%;
+  --bg: hsl(var(--background));
+
+  /* Slightly raised dark surfaces used for framed areas or overlays. */
+  --bg-elevated: hsl(28 45% 10% / 0.94);
+
+  /* Softer translucent surface for glass-like or layered moments. */
+  --bg-soft: hsl(28 45% 12% / 0.78);
+
+  /* Core panel and card tone on dark mode. */
+  --card: 28 45% 12%;
+  --panel: hsl(var(--card));
+
+  /* Muted dark surface for secondary emphasis. */
+  --muted: 28 45% 20%;
+
+  /*
+   * Primary text on dark mode.
+   * Not pure white in the token, because slightly warm near-white feels more
+   * expensive and easier on the eye across large areas.
+   */
+  --foreground: 45 21% 95%;
+  --text: hsl(var(--foreground));
+
+  /* Secondary body text: clear but less dominant than headlines. */
+  --text-soft: hsl(var(--foreground) / 0.78);
+
+  /* Muted support text: metadata, helper copy, supporting UI. */
+  --text-muted: hsl(45 21% 65%);
+  --muted-foreground: 45 21% 65%;
+
+  /* Borders on dark mode stay subtle to avoid wireframe aesthetics. */
+  --border: 28 45% 20%;
+  --line: hsl(var(--border));
+  --line-strong: hsl(var(--border) / 0.9);
+
+  /* Accent system. */
+  --primary: var(--brand-primary);
+  --primary-foreground: 0 0% 100%;
+  --accent: hsl(var(--brand-primary));
+  --accent-2: #d0861e;
+  --accent-3: #fee685;
+  --ring: var(--brand-primary);
+
+  /* Feedback aliases. */
+  --success: var(--brand-success);
+  --danger: hsl(var(--brand-danger));
+  --destructive: var(--brand-danger);
+
+  /* ---------------------------------------------------------------------- */
+  /* 3. Semantic tokens - light environment                                 */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * The light environment is where explanation happens.
+   * These surfaces favor reading comfort and calm comparison.
+   */
+
+  --panel-light: var(--brand-cream-50);
+  --panel-light-alt: #fbfaf9;
+
+  /*
+   * Espresso text instead of neutral black.
+   * This keeps the site warmer, softer, and more branded even in plain text.
+   */
+  --text-dark: hsl(28 45% 15%);
+  --text-dark-soft: hsl(45 21% 40%);
+
+  /* Accent links on light mode. */
+  --link-accent: #9e5c1f;
+  --link-accent-hover: #7a4515;
+  --link-accent-border: rgba(158, 92, 31, 0.18);
+  --link-accent-border-light: rgba(158, 92, 31, 0.16);
+
+  /* ---------------------------------------------------------------------- */
+  /* 4. Opacity system - on dark backgrounds                                */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * These values encode hierarchy, not decoration.
+   * They create predictable reading depth on dark surfaces.
+   *
+   * 0.04-0.08  = barely-there surfaces and glass hints
+   * 0.10-0.18  = borders, pills, and low-commitment chrome
+   * 0.50-0.72  = metadata and de-emphasized copy
+   * 0.78-0.86  = standard readable supporting text
+   * 0.90-0.94  = committed text and high-confidence foreground
+   */
+
+  --white-alpha-04: rgba(255, 255, 255, 0.04);
+  --white-alpha-05: rgba(255, 255, 255, 0.05);
+  --white-alpha-08: rgba(255, 255, 255, 0.08);
+  --white-alpha-10: rgba(255, 255, 255, 0.10);
+  --white-alpha-12: rgba(255, 255, 255, 0.12);
+  --white-alpha-14: rgba(255, 255, 255, 0.14);
+  --white-alpha-16: rgba(255, 255, 255, 0.16);
+  --white-alpha-18: rgba(255, 255, 255, 0.18);
+  --white-alpha-50: rgba(255, 255, 255, 0.50);
+  --white-alpha-72: rgba(255, 255, 255, 0.72);
+  --white-alpha-78: rgba(255, 255, 255, 0.78);
+  --white-alpha-84: rgba(255, 255, 255, 0.84);
+  --white-alpha-86: rgba(255, 255, 255, 0.86);
+  --white-alpha-90: rgba(255, 255, 255, 0.90);
+  --white-alpha-92: rgba(255, 255, 255, 0.92);
+  --white-alpha-94: rgba(255, 255, 255, 0.94);
+
+  /* ---------------------------------------------------------------------- */
+  /* 5. Opacity system - on light backgrounds                               */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Base color: rgb(34, 22, 14), the espresso brown.
+   *
+   * These values are the light-mode hierarchy ladder.
+   * They keep content readable without forcing every supporting element to use
+   * a new named color.
+   *
+   * 0.03-0.06  = atmospheric surfaces, dividers, and washed backgrounds
+   * 0.08-0.14  = default borders and low-priority structure
+   * 0.22-0.28  = stronger decoration, progress cues, strike-through support
+   * 0.56-0.64  = muted text, labels, metadata
+   * 0.76-0.88  = body copy and near-primary text on light surfaces
+   */
+
+  --dark-alpha-03: rgba(34, 22, 14, 0.03);
+  --dark-alpha-05: rgba(34, 22, 14, 0.05);
+  --dark-alpha-06: rgba(34, 22, 14, 0.06);
+  --dark-alpha-08: rgba(34, 22, 14, 0.08);
+  --dark-alpha-10: rgba(34, 22, 14, 0.10);
+  --dark-alpha-12: rgba(34, 22, 14, 0.12);
+  --dark-alpha-14: rgba(34, 22, 14, 0.14);
+  --dark-alpha-22: rgba(34, 22, 14, 0.22);
+  --dark-alpha-28: rgba(34, 22, 14, 0.28);
+  --dark-alpha-56: rgba(34, 22, 14, 0.56);
+  --dark-alpha-58: rgba(34, 22, 14, 0.58);
+  --dark-alpha-62: rgba(34, 22, 14, 0.62);
+  --dark-alpha-64: rgba(34, 22, 14, 0.64);
+  --dark-alpha-76: rgba(34, 22, 14, 0.76);
+  --dark-alpha-82: rgba(34, 22, 14, 0.82);
+  --dark-alpha-84: rgba(34, 22, 14, 0.84);
+  --dark-alpha-88: rgba(34, 22, 14, 0.88);
+
+  /* Utility black alpha values used where purely neutral depth is required. */
+  --black-alpha-06: rgba(0, 0, 0, 0.06);
+  --black-alpha-08: rgba(0, 0, 0, 0.08);
+  --black-alpha-12: rgba(0, 0, 0, 0.12);
+  --black-alpha-25: rgba(0, 0, 0, 0.25);
+  --black-alpha-28: rgba(0, 0, 0, 0.28);
+  --black-alpha-34: rgba(0, 0, 0, 0.34);
+  --black-alpha-42: rgba(0, 0, 0, 0.42);
+
+  /* ---------------------------------------------------------------------- */
+  /* 6. Gradient strategy                                                   */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Gradients are used to build atmosphere, not to show off color range.
+   * They imply depth, stage lighting, and premium presentation.
+   *
+   * Rules:
+   * - Dark gradients should move through warm browns, not neutral grays.
+   * - Light gradients should whisper, not dominate.
+   * - Accent gradients are for feature headers and moments of guided attention.
+   */
+
+  /* Hero gradient: dramatic top-lit field for first impression. */
+  --gradient-hero: radial-gradient(
+    ellipse at top,
+    var(--brand-neutral-700) 0%,
+    var(--brand-neutral-500) 50%,
+    var(--brand-neutral-400) 100%
+  );
+
+  /* Feature section gradient: quieter, supportive, content-first. */
+  --gradient-feature: linear-gradient(
+    180deg,
+    var(--brand-neutral-500),
+    var(--brand-neutral-400)
+  );
+
+  /* Feature stage gradient: the strongest directional signal in content. */
+  --gradient-feature-stage: linear-gradient(
+    135deg,
+    #c6750c 0%,
+    #c6750c 35%,
+    #000a0f 100%
+  );
+
+  /* ---------------------------------------------------------------------- */
+  /* 7. Shadow strategy                                                     */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Shadows stay warm and soft-edged.
+   * They create perceived elevation without making the UI feel sharp or cheap.
+   *
+   * Large shadows are cinematic framing.
+   * Medium shadows are card separation.
+   * Small shadows are quiet support on light previews.
+   */
+
+  --shadow-lg: 0 36px 120px rgba(16, 9, 4, 0.28);
+  --shadow-md: 0 20px 60px rgba(16, 9, 4, 0.2);
+  --shadow-sm: 0 4px 14px rgba(27, 19, 10, 0.04);
+  --shadow-card-light: 0 26px 90px rgba(76, 46, 18, 0.08);
+  --shadow-card-light-hover: 0 18px 42px rgba(76, 46, 18, 0.08);
+  --shadow-preview-window: 0 18px 40px rgba(27, 19, 10, 0.14);
+  --shadow-dark-frame: 0 24px 80px rgba(0, 0, 0, 0.28);
+  --shadow-dark-frame-soft: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-dark-button: 0 14px 30px rgba(18, 11, 7, 0.14);
+  --shadow-accent-card: 0 24px 48px rgba(188, 126, 65, 0.22);
+
+  /* ---------------------------------------------------------------------- */
+  /* 8. Radius system                                                       */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Rounded corners are intentional: soft enough to feel welcoming, but not
+   * so round that the interface becomes toy-like.
+   */
+
+  --radius-xl: 1rem;
+  --radius-lg: 0.875rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 999px;
+
+  /* ---------------------------------------------------------------------- */
+  /* 9. Motion system                                                       */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Motion in this system communicates certainty and affordance.
+   * Every current transition in the app uses `ease`, which creates a familiar,
+   * dependable acceleration profile. That consistency matters more than exotic
+   * motion curves here; the product should feel stable before it feels novel.
+   *
+   * Duration tiers and intent:
+   * - 150ms: immediate mechanical feedback (range fill, thumb position)
+   * - 180ms: default interaction feedback; buttons, links, cards, hover states
+   * - 220ms: slightly more deliberate structural response; nav states, icons,
+   *          panels that need to feel intentional instead of twitchy
+   * - 260ms: toggle commitment; the control changed state and should feel clear
+   * - 280-300ms: disclosure and accordion movement; enough time to read change
+   * - 520-620ms: entrance and reveal; atmosphere, not utility
+   *
+   * Motion meanings:
+   * - translateY(-1px): "this is clickable"
+   * - translateY(-2px): "this is a larger interactive surface/card"
+   * - color shift only: "this is navigational, not a physical object"
+   * - opacity + translate reveal: "new information is entering the scene"
+   * - icon rotation: "state has toggled"
+   */
+
+  --motion-ease-standard: ease;
+
+  --motion-duration-instant: 150ms;
+  --motion-duration-fast: 180ms;
+  --motion-duration-quiet: 220ms;
+  --motion-duration-toggle: 260ms;
+  --motion-duration-disclosure-fast: 280ms;
+  --motion-duration-disclosure: 300ms;
+  --motion-duration-entrance-fast: 520ms;
+  --motion-duration-entrance: 620ms;
+
+  --motion-distance-button: -1px;
+  --motion-distance-card: -2px;
+  --motion-distance-reveal: 26px;
+  --motion-distance-rise: 14px;
+  --motion-distance-bubble: 12px;
+
+  /* Semantic motion aliases for future refactors. */
+  --motion-button-hover: var(--motion-duration-fast);
+  --motion-link-hover: var(--motion-duration-fast);
+  --motion-card-hover: var(--motion-duration-fast);
+  --motion-nav-hover: var(--motion-duration-quiet);
+  --motion-panel-toggle: var(--motion-duration-disclosure);
+  --motion-switch-toggle: var(--motion-duration-toggle);
+  --motion-reveal-scroll: var(--motion-duration-entrance);
+
+  /* ---------------------------------------------------------------------- */
+  /* 10. Focus and accessibility tokens                                     */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Accessibility in this design is not a visual compromise.
+   * Clear focus treatment communicates precision and competence.
+   * Focus should be highly visible, warm, and consistent with the brand.
+   */
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: hsl(var(--ring));
+  --focus-ring-color-soft: hsl(var(--ring) / 0.35);
+  --focus-ring-shadow-dark: 0 0 0 3px hsl(var(--foreground) / 0.12);
+  --focus-ring-shadow-light: 0 0 0 3px hsl(var(--brand-primary) / 0.18);
+
+  /* ---------------------------------------------------------------------- */
+  /* 11. Typography intent                                                  */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Typography is a major part of the brand voice.
+   *
+   * Instrument Serif:
+   * - Used for headlines and signature moments.
+   * - Adds taste, memorability, and editorial confidence.
+   * - The italic moments create selective drama and human character.
+   *
+   * Inter:
+   * - Used for body copy and interface text.
+   * - Keeps the product readable, modern, and operational.
+   *
+   * The pairing says: thoughtful but usable.
+   */
+
+  --font-family-heading: "Instrument Serif", Georgia, serif;
+  --font-family-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Arial, sans-serif;
+
+  /* ---------------------------------------------------------------------- */
+  /* 12. Breakpoint reference                                               */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * These are documentation tokens only. CSS custom properties cannot be used
+   * directly inside media queries in standard CSS, but keeping them here makes
+   * the responsive system explicit for future maintainers.
+   */
+
+  --breakpoint-desktop-max: 99999px;
+  --breakpoint-tablet: 1080px;
+  --breakpoint-mobile: 920px;
+  --breakpoint-small: 720px;
+}
+
+/*
+ * --------------------------------------------------------------------------
+ * INTERACTION PATTERNS
+ * --------------------------------------------------------------------------
+ *
+ * Buttons
+ * - Primary buttons are high-commitment actions.
+ * - White-on-dark hero buttons feel immediate and confident.
+ * - Hover lift is tiny on purpose; the UI acknowledges input without becoming
+ *   playful.
+ *
+ * Links
+ * - Most links shift color rather than move. This teaches users that text
+ *   links are navigational language, not physical controls.
+ *
+ * Cards
+ * - Cards lift slightly more than buttons because they are larger interactive
+ *   zones and need stronger affordance.
+ * - Border-color shift on hover helps the user understand "this cluster of
+ *   content is selectable" before they click.
+ *
+ * Toggles and sliders
+ * - Fast movement communicates direct manipulation.
+ * - Thumb movement is literal: state has physically changed position.
+ *
+ * Accordions
+ * - Disclosure motion is slower than button hover because the user needs to
+ *   cognitively track layout change, not just confirm interaction.
+ * - Plus-to-rotated icon indicates the section has changed state, not merely
+ *   been highlighted.
+ *
+ * Scroll reveals and live previews
+ * - These are theatrical, not essential.
+ * - They are meant to reward attention and create a sense of momentum.
+ * - The longer duration makes them feel like content entering a stage rather
+ *   than snapping into a dashboard.
+ */
+
+/*
+ * --------------------------------------------------------------------------
+ * ACCESSIBILITY INTENT
+ * --------------------------------------------------------------------------
+ *
+ * Reduced motion
+ * - The experience should remain understandable with little or no animation.
+ * - Entrance effects are decorative and should disappear before utility does.
+ *
+ * Focus states
+ * - Keyboard users should get an equally premium experience.
+ * - Focus needs enough contrast to stand out on both dark and light surfaces.
+ *
+ * ARIA and semantics
+ * - Buttons that open panels should expose `aria-expanded` and reference the
+ *   controlled region with `aria-controls`.
+ * - Mobile navigation toggles should announce state changes clearly.
+ * - FAQ disclosures should be actual buttons, not clickable divs.
+ * - Decorative gradient and glow layers should remain non-interactive.
+ *
+ * Copy hierarchy
+ * - Muted text should never become unreadable text.
+ * - De-emphasis is for hierarchy, not for hiding critical information.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /*
+     * Future-facing motion override tokens.
+     * Components that adopt motion vars can collapse to near-zero animation
+     * without changing their semantics.
+     */
+    --motion-duration-instant: 0.01ms;
+    --motion-duration-fast: 0.01ms;
+    --motion-duration-quiet: 0.01ms;
+    --motion-duration-toggle: 0.01ms;
+    --motion-duration-disclosure-fast: 0.01ms;
+    --motion-duration-disclosure: 0.01ms;
+    --motion-duration-entrance-fast: 0.01ms;
+    --motion-duration-entrance: 0.01ms;
+
+    --motion-distance-button: 0px;
+    --motion-distance-card: 0px;
+    --motion-distance-reveal: 0px;
+    --motion-distance-rise: 0px;
+    --motion-distance-bubble: 0px;
+  }
+}
+
+/*
+ * --------------------------------------------------------------------------
+ * REFERENCE MAP
+ * --------------------------------------------------------------------------
+ *
+ * Dark mode essentials
+ * - Background: `var(--bg)`
+ * - Elevated dark surface: `var(--bg-elevated)`
+ * - Card surface: `hsl(var(--card))`
+ * - Primary text: `var(--text)`
+ * - Supporting text: `var(--text-soft)`
+ * - Muted text: `var(--text-muted)`
+ * - Borders: `var(--line)`
+ * - Accent: `var(--accent)`
+ *
+ * Light mode essentials
+ * - Reading surface: `var(--panel-light)`
+ * - Alternate reading surface: `var(--panel-light-alt)`
+ * - Primary text: `var(--text-dark)`
+ * - Supporting text: `var(--dark-alpha-76)` or `var(--text-dark-soft)`
+ * - Border: `var(--dark-alpha-08)` to `var(--dark-alpha-14)`
+ * - Inline link: `var(--link-accent)`
+ *
+ * Motion essentials
+ * - Fast feedback: `var(--motion-duration-fast)`
+ * - Structural response: `var(--motion-duration-quiet)`
+ * - Toggle movement: `var(--motion-duration-toggle)`
+ * - Disclosure: `var(--motion-duration-disclosure)`
+ * - Reveal: `var(--motion-duration-entrance)`
+ *
+ * Typical movement distances
+ * - Button hover: `var(--motion-distance-button)`
+ * - Card hover: `var(--motion-distance-card)`
+ * - Reveal offset: `var(--motion-distance-reveal)`
+ */
