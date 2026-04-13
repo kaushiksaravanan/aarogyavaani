@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -31,14 +33,26 @@ class StarterConfigResponse(BaseModel):
     config: dict
 
 
+_default_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://launchforge-app.vercel.app",
+]
+
+_extra = os.getenv("FRONTEND_URL", "")
+allowed_origins = _default_origins + ([_extra] if _extra else [])
+
 app = FastAPI(title="Hackathon Starter API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
 )
 
 
