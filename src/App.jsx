@@ -6,6 +6,13 @@ import { HeroSection } from "./parallel/HeroTop";
 import MiddleSections from "./parallel/MiddleSections";
 import LowerSections from "./parallel/LowerSections";
 import SiteHeader from "./parallel15/02-header";
+import StarterHub from "./starter/StarterHub.jsx";
+import {
+  AuthStarterPage,
+  BillingStarterPage,
+  ProviderStatusPage,
+  MobilePublishingPage,
+} from "./starter/StarterPages.jsx";
 import {
   MarketingPage,
   BlogIndexPage,
@@ -21,23 +28,14 @@ import {
   toolPages,
   useCasePages,
   alternativePages,
-  blogPosts,
-  checklistPages,
-  templatePages,
-  glossaryPages,
-} from "./siteContent";
-
-function withRouteMeta(collection, basePath) {
-  return Object.entries(collection).reduce((accumulator, [slug, page]) => {
-    accumulator[slug] = { ...page, slug, path: `${basePath}/${slug}` };
-    return accumulator;
-  }, {});
-}
-
-const blogPostMap = withRouteMeta(blogPosts, "/blog");
-const checklistPageMap = withRouteMeta(checklistPages, "/resources/checklists");
-const templatePageMap = withRouteMeta(templatePages, "/resources/templates");
-const glossaryPageMap = withRouteMeta(glossaryPages, "/resources/glossary");
+} from "./siteContent.js";
+import {
+  blogPostMap,
+  checklistPageMap,
+  templatePageMap,
+  glossaryPageMap,
+  blogIndexPosts,
+} from "./siteRoutes.js";
 
 const relatedBlogPosts = Object.values(blogPostMap).map((post) => ({
   title: post.title,
@@ -62,27 +60,6 @@ const relatedGlossaryPages = Object.values(glossaryPageMap).map((page) => ({
   to: page.path,
   body: page.excerpt,
 }));
-
-const blogIndexOrder = [
-  "best-git-reporting-tools",
-  "dora-metrics-guide",
-  "best-async-standup-tools",
-  "how-to-track-developer-activity-with-git-reports",
-  "how-to-add-git-reporting-tool-to-your-repository",
-  "pull-request-template",
-  "github-pull-request-template",
-  "github-activity-digest-notification-tools",
-  "bitbucket-analytics-metrics-team-guide",
-  "sprint-report-guide",
-  "engineering-metrics-guide",
-  "developer-productivity-metrics",
-];
-
-const orderedBlogPosts = blogIndexOrder.map((slug) => blogPostMap[slug]).filter(Boolean);
-const blogIndexPosts = [
-  ...orderedBlogPosts,
-  ...Object.values(blogPostMap).filter((post) => !blogIndexOrder.includes(post.slug)),
-];
 
 function HomePage() {
   const [yearlyBilling, setYearlyBilling] = useState(false);
@@ -114,37 +91,25 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/starter" element={<StarterHub />} />
+      <Route path="/starter/auth" element={<AuthStarterPage />} />
+      <Route path="/starter/billing" element={<BillingStarterPage />} />
+      <Route path="/starter/providers" element={<ProviderStatusPage />} />
+      <Route path="/starter/mobile" element={<MobilePublishingPage />} />
       <Route path="/about" element={<MarketingPage page={companyPages.about} />} />
       <Route path="/contact" element={<MarketingPage page={companyPages.contact} />} />
       <Route path="/policy" element={<MarketingPage page={legalPages.policy} />} />
       <Route path="/terms" element={<MarketingPage page={legalPages.terms} />} />
       <Route path="/privacy-policy" element={<MarketingPage page={legalPages.policy} />} />
 
-      <Route path="/git-reporting/tool/github" element={<MarketingPage page={toolPages.github} />} />
-      <Route path="/git-reporting/tool/gitlab" element={<MarketingPage page={toolPages.gitlab} />} />
-      <Route path="/git-reporting/tool/bitbucket" element={<MarketingPage page={toolPages.bitbucket} />} />
+      <Route path="/stack/supabase" element={<MarketingPage page={toolPages.supabase} />} />
+      <Route path="/stack/clerk" element={<MarketingPage page={toolPages.clerk} />} />
+      <Route path="/stack/paddle" element={<MarketingPage page={toolPages.paddle} />} />
 
-      <Route path="/use-case/standup-reports" element={<MarketingPage page={useCasePages["standup-reports"]} />} />
-      <Route path="/use-case/sprint-reports" element={<MarketingPage page={useCasePages["sprint-reports"]} />} />
-      <Route
-        path="/use-case/developer-productivity-reports"
-        element={<MarketingPage page={useCasePages["developer-productivity-reports"]} />}
-      />
-      <Route
-        path="/use-case/engineering-manager-reports"
-        element={<MarketingPage page={useCasePages["engineering-manager-reports"]} />}
-      />
-      <Route path="/use-case/async-standups" element={<MarketingPage page={useCasePages["async-standups"]} />} />
-      <Route
-        path="/use-case/cto-engineering-visibility"
-        element={<MarketingPage page={useCasePages["cto-engineering-visibility"]} />}
-      />
+      <Route path="/use-case/hackathons" element={<MarketingPage page={useCasePages.hackathons} />} />
+      <Route path="/use-case/10k-mrr-saas" element={<MarketingPage page={useCasePages["10k-mrr-saas"]} />} />
 
-      <Route path="/alternative/geekbot" element={<MarketingPage page={alternativePages.geekbot} />} />
-      <Route path="/alternative/linearb" element={<MarketingPage page={alternativePages.linearb} />} />
-      <Route path="/alternative/keypup" element={<MarketingPage page={alternativePages.keypup} />} />
-      <Route path="/alternative/swarmia" element={<MarketingPage page={alternativePages.swarmia} />} />
-      <Route path="/alternative/standuply" element={<MarketingPage page={alternativePages.standuply} />} />
+      <Route path="/alternative/blank-repo" element={<MarketingPage page={alternativePages["blank-repo"]} />} />
 
       <Route path="/blog" element={<BlogIndexPage posts={blogIndexPosts} />} />
       {Object.values(blogPostMap).map((post) => (

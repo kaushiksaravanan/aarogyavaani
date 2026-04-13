@@ -21,16 +21,7 @@ Allow: /
 User-Agent: cohere-ai
 Allow: /
 
-User-Agent: FacebookBot
-Allow: /
-
 User-Agent: CCBot
 Allow: /
 
-User-Agent: YouBot
-Allow: /
-
-User-Agent: Applebot-Extended
-Allow: /
-
-Sitemap: https://gitmore.io/sitemap.xml
+Sitemap: https://launchforge.app/sitemap.xml

@@ -213,12 +213,12 @@ export function FinalCtaSection() {
       <div className="lower-sections__cta-surface" />
       <div className="lower-sections__container lower-sections__container--cta">
         <div className="lower-final-cta">
-          <h2>Try it for free</h2>
+          <h2>Start from a stronger base</h2>
           <p>
-            We're confident you'll love it. But if you don't? Just cancel. No hard feelings. No "let's schedule a call to discuss your experience" emails.
+            Rebrand the starter, wire the providers you need, and spend your energy on the workflow that makes the product worth paying for.
           </p>
           <a href={`${urls.app}/`} target="_blank" rel="noopener noreferrer" className="lower-sections__button lower-sections__button--dark">
-            Get started
+            Use this template
           </a>
         </div>
       </div>

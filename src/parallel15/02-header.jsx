@@ -91,7 +91,7 @@ export default function SiteHeader() {
               target="_blank"
               rel="noreferrer"
             >
-              Get Started
+              Use This Template
             </a>
           </div>
 
@@ -133,7 +133,7 @@ export default function SiteHeader() {
           rel="noreferrer"
           onClick={() => setMobileOpen(false)}
         >
-          Get Started
+          Use This Template
         </a>
       </div>
     </>

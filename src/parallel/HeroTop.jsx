@@ -54,11 +54,11 @@ export function HeroSection() {
               target="_blank"
               rel="noreferrer"
             >
-              Get Started Free
+              Use This Template
             </a>
             <a className="hero-top-hero__button hero-top-hero__button--secondary" href={urls.demoReport}>
               <MailIcon />
-              <span>View Demo Report</span>
+              <span>Open Starter Hub</span>
             </a>
           </div>
 

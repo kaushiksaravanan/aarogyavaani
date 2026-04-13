@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { brand } from "./siteConfig";
+import { brand } from "./siteConfig.js";
 
 /**
  * SEO Head Component
@@ -9,9 +9,9 @@ import { brand } from "./siteConfig";
  * Usage:
  *   <SeoHead title="About" description="About us page" path="/about" />
  */
-export default function SeoHead({ title, description, path, type = "website", image }) {
+export default function SeoHead({ title, description, path, type = "website", image, appendBrand = true }) {
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${brand.domain}` : brand.domain;
+    const fullTitle = title ? (appendBrand ? `${title} | ${brand.domain}` : title) : brand.domain;
     const ogImage = image ?? brand.logo;
     const canonicalUrl = path ? `https://${brand.domain}${path}` : `https://${brand.domain}`;
 
@@ -37,9 +37,7 @@ export default function SeoHead({ title, description, path, type = "website", im
     };
 
     // Standard meta
-    if (description) {
-      setMeta('meta[name="description"]', "content", description);
-    }
+    setMeta('meta[name="description"]', "content", description ?? brand.description);
 
     // Open Graph
     setMeta('meta[property="og:title"]', "content", fullTitle);
@@ -64,7 +62,19 @@ export default function SeoHead({ title, description, path, type = "website", im
     }
 
     canonical.setAttribute("href", canonicalUrl);
-  }, [title, description, path, type, image]);
+
+    let llms = document.querySelector('link[rel="alternate"][type="text/plain"][title="LLMs"]');
+
+    if (!llms) {
+      llms = document.createElement("link");
+      llms.setAttribute("rel", "alternate");
+      llms.setAttribute("type", "text/plain");
+      llms.setAttribute("title", "LLMs");
+      document.head.appendChild(llms);
+    }
+
+    llms.setAttribute("href", "/llms.txt");
+  }, [title, description, path, type, image, appendBrand]);
 
   return null;
 }

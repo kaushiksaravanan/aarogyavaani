@@ -1,33 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { brand, urls } from "./siteConfig";
+import { brand, urls } from "./siteConfig.js";
+import SeoHead from "./SeoHead.jsx";
 import SiteHeader from "./parallel15/02-header";
 import { LowerSectionsFooter } from "./parallel/LowerSections";
 
 const EMAIL_ONLY_RE = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 const LABELLED_LINK_RE = /^(.+?):\s*((?:https?:\/\/\S+)|(?:[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}))$/i;
 const LINK_TOKEN_RE = /(https?:\/\/[^\s]+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
-
-function usePageMeta(title, description, appendBrand = true) {
-  useEffect(() => {
-    const previousTitle = document.title;
-    const meta = document.querySelector('meta[name="description"]');
-    const previousDescription = meta?.getAttribute("content") ?? "";
-
-    document.title = title ? (appendBrand ? `${title} | ${brand.domain}` : title) : brand.domain;
-
-    if (meta && description) {
-      meta.setAttribute("content", description);
-    }
-
-    return () => {
-      document.title = previousTitle;
-      if (meta) {
-        meta.setAttribute("content", previousDescription);
-      }
-    };
-  }, [appendBrand, description, title]);
-}
 
 function createTextLink(label, href, key) {
   const isEmail = EMAIL_ONLY_RE.test(href);
@@ -127,7 +107,7 @@ function getChecklistItems(sections = []) {
   );
 }
 
-function HeroActions({ ctaLabel = "Get Started Free", ctaHref = `${urls.app}/`, secondaryLabel = "View Demo Report", secondaryHref = urls.demoReport }) {
+function HeroActions({ ctaLabel = "Use This Template", ctaHref = `${urls.app}/`, secondaryLabel = "Open Starter Hub", secondaryHref = urls.demoReport }) {
   const secondaryIsRoutable = secondaryHref.startsWith("/") && !secondaryHref.endsWith(".html");
 
   return (
@@ -318,10 +298,9 @@ function ContentPage({
   sectionProps,
   children,
 }) {
-  usePageMeta(metaTitle ?? title, description, !metaTitle);
-
   return (
     <div className="content-page">
+      <SeoHead title={metaTitle ?? title} description={description} path={breadcrumbs?.[breadcrumbs.length - 1]?.to} appendBrand={!metaTitle} />
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
@@ -360,10 +339,10 @@ export function MarketingPage({ page }) {
         <section className="content-page__section content-page__cta-band">
           <SectionIntro title={page.finalCta.title} description={page.finalCta.description} />
           <HeroActions
-            ctaLabel={page.finalCta.ctaLabel ?? "Get Started Free"}
+            ctaLabel={page.finalCta.ctaLabel ?? "Use This Template"}
             ctaHref={page.finalCta.ctaHref ?? `${urls.app}/`}
-            secondaryLabel={page.finalCta.secondaryLabel ?? "View Demo Report"}
-            secondaryHref={page.finalCta.secondaryHref ?? "/example.html"}
+            secondaryLabel={page.finalCta.secondaryLabel ?? "Open Starter Hub"}
+            secondaryHref={page.finalCta.secondaryHref ?? urls.demoReport}
           />
         </section>
       ) : null}
@@ -376,9 +355,9 @@ export function BlogIndexPage({ posts }) {
 
   return (
     <ContentPage
-      metaTitle={`Blog - Git Reporting Tips, Guides & Stories | ${brand.name}`}
+      metaTitle={`Blog - SaaS Launch Guides & Starter Tactics | ${brand.name}`}
       title={`The ${brand.name} Blog`}
-      description="Tips, guides & stories about git reporting, developer productivity, and keeping your engineering team in sync."
+      description="Guides, tactics, and templates for launching SaaS products faster with better product taste and less setup drag."
       eyebrow={null}
       lead={null}
       actions={false}
@@ -421,15 +400,15 @@ export function BlogArticlePage({ post, relatedPosts = [] }) {
     >
       <RelatedLinks title="Keep reading" items={relatedPosts} />
       <RelatedLinks
-        title="Explore git reporting for your platform"
+        title="Explore the starter stack"
         items={[
-          { title: "GitHub Reports →", to: "/git-reporting/tool/github" },
-          { title: "GitLab Reports →", to: "/git-reporting/tool/gitlab" },
-          { title: "Bitbucket Reports →", to: "/git-reporting/tool/bitbucket" },
+          { title: "Supabase Starter →", to: "/stack/supabase" },
+          { title: "Clerk Auth →", to: "/stack/clerk" },
+          { title: "Paddle Billing →", to: "/stack/paddle" },
         ]}
       />
       <section className="content-page__section content-page__cta-band">
-        <SectionIntro title={`Try ${brand.name} for free`} description="Automated git reports for your engineering team. Set up in 2 minutes, no credit card required." />
+        <SectionIntro title={`Use ${brand.name} as your launch engine`} description="Start with the polished foundation, then build the one workflow your market will pay for." />
         <HeroActions secondaryLabel="Back to Blog" secondaryHref="/blog" />
       </section>
     </ContentPage>
@@ -525,7 +504,7 @@ export function ChecklistPage({ page, relatedPages = [] }) {
       </section>
       <RelatedLinks title="More Checklists" items={page.related ?? relatedPages} />
       <section className="content-page__section content-page__cta-band">
-        <SectionIntro title="Automate Your Git Reporting" description="Stop compiling reports manually. Let your code speak for itself with automated daily and weekly reports." />
+        <SectionIntro title="Ship faster with the starter" description="Use the launch-ready foundation and spend your energy on your differentiated workflow." />
         <HeroActions />
       </section>
     </ContentPage>
@@ -566,7 +545,7 @@ export function ResourceArticlePage({ page, typeLabel, relatedPages = [] }) {
       ) : null}
       <RelatedLinks title={typeLabel === "Glossary" ? "Related" : "More Templates"} items={page.related ?? relatedPages} />
       <section className="content-page__section content-page__cta-band">
-        <SectionIntro title={typeLabel === "Glossary" ? "Track DORA Metrics Automatically" : "Automate Your Git Reporting"} description={`${brand.name} turns your git activity into automated reports delivered to Slack and email.`} />
+        <SectionIntro title={typeLabel === "Glossary" ? "Learn the language of product building" : "Use the starter and launch sooner"} description={`${brand.name} gives you a premium foundation for launching SaaS products with less setup drag.`} />
         <HeroActions />
       </section>
     </ContentPage>
@@ -576,11 +555,11 @@ export function ResourceArticlePage({ page, typeLabel, relatedPages = [] }) {
 export function ResourcesPage({ checklists, templates, glossary, allPostsCount }) {
   return (
     <ContentPage
-      metaTitle={`Developer Resources: Templates, Checklists & Guides | ${brand.name}`}
-      title="Engineering Resources"
-      description="Checklists, templates, and practical guides for engineering teams setting up workflows, reporting, and communication."
+      metaTitle={`Builder Resources: Templates, Checklists & Guides | ${brand.name}`}
+      title="Builder Resources"
+      description="Checklists, templates, and practical guides for founders, indie hackers, and product teams launching SaaS products faster."
       eyebrow={null}
-      lead="Practical resources to improve your git workflow, reporting, and team productivity."
+      lead="Practical resources to improve product clarity, launch speed, and operational leverage."
       actions={false}
     >
       <section className="content-page__section">
@@ -606,7 +585,7 @@ export function ResourcesPage({ checklists, templates, glossary, allPostsCount }
       </section>
 
       <section className="content-page__section">
-        <SectionIntro title="Checklists" description="Setup and audit checklists for the major git platforms." />
+        <SectionIntro title="Checklists" description="Launch and setup checklists for builders moving from idea to product." />
         <div className="content-page__card-grid">
           {checklists.map((page) => (
             <article key={page.slug} className="content-page__card">
@@ -621,7 +600,7 @@ export function ResourcesPage({ checklists, templates, glossary, allPostsCount }
       </section>
 
       <section className="content-page__section">
-        <SectionIntro title="Templates" description="Copy-paste templates for recurring engineering communication and operating rhythms." />
+        <SectionIntro title="Templates" description="Copy-paste templates for demos, launches, legal pages, and product communication." />
         <div className="content-page__card-grid">
           {templates.map((page) => (
             <article key={page.slug} className="content-page__card">
@@ -636,7 +615,7 @@ export function ResourcesPage({ checklists, templates, glossary, allPostsCount }
       </section>
 
       <section className="content-page__section">
-        <SectionIntro title="Glossary" description="Fast definitions for delivery and engineering metrics concepts." />
+        <SectionIntro title="Glossary" description="Fast definitions for startup, product, and go-to-market concepts." />
         <div className="content-page__card-grid">
           {glossary.map((page) => (
             <article key={page.slug} className="content-page__card">
@@ -659,7 +638,7 @@ export function NotFoundPage() {
       title="Page not found"
       description="The page you requested could not be found."
       eyebrow="404"
-      lead="Try the homepage, blog, resources, or one of the Git reporting pages below."
+      lead="Try the homepage, blog, resources, or the starter hub below."
       sections={[]}
       actions={false}
     >
@@ -669,7 +648,7 @@ export function NotFoundPage() {
           { title: "Homepage", to: "/", body: `Return to the main ${brand.name} landing page.` },
           { title: "Blog", to: "/blog", body: "Browse blog guides and comparison content." },
           { title: "Resources", to: "/resources", body: "Open templates, checklists, and glossary content." },
-          { title: "GitHub Reports", to: "/git-reporting/tool/github", body: "See the main GitHub reporting page." },
+          { title: "Starter Hub", to: "/starter", body: "Open the core starter overview and launch guide." },
         ]}
       />
     </ContentPage>

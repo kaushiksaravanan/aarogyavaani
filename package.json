@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "npm run seo:sync && npm run sitemap && vite build",
+    "preview": "vite preview",
+    "sitemap": "node scripts/generate-sitemap.js",
+    "seo:sync": "node scripts/sync-seo-assets.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.2",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "xmlbuilder2": "^3.1.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.3",

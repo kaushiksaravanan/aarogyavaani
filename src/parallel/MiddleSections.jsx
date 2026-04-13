@@ -117,15 +117,15 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
       <div className="ms-container ms-container--narrow">
         <SectionIntro
           eyebrow="The difference"
-          title="Your team's work, summarized."
-          accent="Everyone stays in sync."
+          title="Your launch stack, accelerated."
+          accent="Build faster with less boilerplate."
           accentBlock
           accentMuted
         />
 
         <div className="ms-panel ms-compare">
           <div className="ms-compare__controls">
-            <label htmlFor="team-size-slider">Team size</label>
+            <label htmlFor="team-size-slider">Build intensity</label>
 
             <div className="ms-range">
               <div className="ms-range__track">
@@ -138,7 +138,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
                 max="20"
                 value={teamSize}
                 onChange={(event) => onTeamSizeChange(Number(event.target.value))}
-                aria-label="Team size"
+                aria-label="Build intensity"
               />
               <div className="ms-range__thumb" style={{ left: `calc(${sliderPercent}% - 8px)` }} />
             </div>
@@ -149,7 +149,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
           <div className="ms-compare__grid">
             <article className="ms-compare-card">
               <div className="ms-compare-card__header">
-                <p>Manual updates</p>
+                <p>Build from scratch</p>
                 <h3>{comparison.withoutLabel}</h3>
               </div>
 
@@ -172,7 +172,7 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
 
             <article className="ms-compare-card ms-compare-card--positive">
               <div className="ms-compare-card__header">
-                <p>Automated reports</p>
+                <p>Template-assisted launch</p>
                 <h3>{comparison.withLabel}</h3>
               </div>
 
@@ -196,11 +196,11 @@ export function DifferenceSection({ teamSize, onTeamSizeChange }) {
 
           <div className="ms-compare__footer">
             <p>
-              Save <strong>{formatMinutes(manualMinutes)}</strong> every week — that's <strong>{yearlyHours}+ hours</strong> per year
+              Save <strong>{formatMinutes(manualMinutes)}</strong> every week — that's <strong>{yearlyHours}+ hours</strong> per year you can spend on differentiation
             </p>
 
             <a className="ms-button ms-button--primary" href={urls.app} target="_blank" rel="noreferrer">
-              Get started free
+              Use this template
             </a>
           </div>
         </div>
@@ -218,7 +218,7 @@ export function HowItWorksSection() {
           title={"Seriously, it\u2019s that "}
           accent="simple"
           accentItalic
-          subtitle={'No complicated onboarding. No sales calls. No "enterprise setup wizard."'}
+          subtitle="A few smart defaults, one strong workflow, and a product that looks ready before most teams finish setup."
         />
 
         <div className="ms-panel ms-steps">
@@ -233,10 +233,10 @@ export function HowItWorksSection() {
           </div>
 
           <div className="ms-steps__footer">
-            <p>Ready to automate your team updates?</p>
+            <p>Ready to launch with leverage instead of starting from zero?</p>
 
             <a className="ms-button ms-button--primary" href={urls.app} target="_blank" rel="noreferrer">
-              Get started free
+              Use this template
             </a>
           </div>
         </div>
@@ -246,15 +246,15 @@ export function HowItWorksSection() {
 }
 
 function ConnectPreview() {
-  const repositories = [
-    { name: "GitHub", meta: "github.com/acme-corp", tone: "dark", kind: "github", status: "Connected", active: true },
-    { name: "GitLab", meta: "Cloud & Self-hosted", tone: "orange", kind: "gitlab", action: "Connect" },
-    { name: "Bitbucket", meta: "Cloud & Server", tone: "blue", kind: "bitbucket", action: "Connect" },
+  const providers = [
+    { name: "Supabase", meta: "Database + auth", tone: "dark", kind: "github", status: "Configured", active: true },
+    { name: "Clerk", meta: "Sign-in and sessions", tone: "plum", kind: "slack", action: "Enable" },
+    { name: "Paddle", meta: "Billing and upgrades", tone: "orange", kind: "gitlab", action: "Enable" },
   ];
 
-  const channels = [
-    { name: "Slack", meta: "Connected", tone: "plum", kind: "slack" },
-    { name: "Email", meta: "Configured", tone: "slate", kind: "email" },
+  const addons = [
+    { name: "Neon", meta: "Postgres branch workflow", tone: "blue", kind: "bitbucket" },
+    { name: "Tinybird", meta: "Analytics pipeline", tone: "slate", kind: "email" },
   ];
 
   return (
@@ -262,10 +262,10 @@ function ConnectPreview() {
       <WindowChrome title={previewTitles.integrations} icon="lock" />
 
       <div className="ms-window__body">
-        <p className="ms-preview-label">Connect your repositories</p>
+        <p className="ms-preview-label">Turn on the providers you actually need</p>
 
         <div className="ms-integration-list">
-          {repositories.map((item) => (
+          {providers.map((item) => (
             <div key={item.name} className={cx("ms-integration-row", item.active && "is-active")}>
               <div className={cx("ms-logo-box", `is-${item.tone}`)} aria-hidden="true">
                 <ServiceMark kind={item.kind} />
@@ -291,10 +291,10 @@ function ConnectPreview() {
         </div>
 
         <div className="ms-delivery-block">
-          <p className="ms-preview-label">Delivery channels</p>
+          <p className="ms-preview-label">Optional infra and analytics</p>
 
           <div className="ms-channel-grid">
-            {channels.map((item) => (
+            {addons.map((item) => (
               <div key={item.name} className="ms-channel-card">
                 <div className={cx("ms-logo-box ms-logo-box--small", `is-${item.tone}`)} aria-hidden="true">
                   <ServiceMark kind={item.kind} />
@@ -320,24 +320,24 @@ function ReportsPreview() {
       <div className="ms-window__body ms-window__body--tight">
         <div className="ms-mail-meta">
           <div className="ms-mail-meta__row">
-            <span className="ms-mail-meta__label">From:</span>
-            <strong className="ms-mail-meta__value">{urls.reportsEmail}</strong>
+            <span className="ms-mail-meta__label">Plan:</span>
+            <strong className="ms-mail-meta__value">Starter</strong>
           </div>
           <div className="ms-mail-meta__row">
-            <span className="ms-mail-meta__label">Subject:</span>
-            <strong className="ms-mail-meta__value">Weekly Development Summary - Week 51</strong>
+            <span className="ms-mail-meta__label">Status:</span>
+            <strong className="ms-mail-meta__value">Checkout ready</strong>
           </div>
         </div>
 
         <div className="ms-mail-copy">
-          <p>Hi Team,</p>
+          <p>Launch path ready.</p>
           <p>
-            Here's your weekly development summary. Your team had an exceptionally productive week with <strong>127 commits</strong> across <strong>18 pull requests</strong>.
+            Map one clear paid outcome, one pricing page, and one upgrade trigger before adding more packaging complexity.
           </p>
           <p>
-            <strong>John</strong> worked on enhancing user interactions with the new authentication flow, while <strong>Sarah</strong> optimized the database queries, improving performance by 40%.
+            The best template-driven billing flow starts with <strong>one paid plan</strong>, <strong>one success state</strong>, and a tight handoff between product value and checkout.
           </p>
-          <p className="ms-mail-body__footer">{"Keep up the great work! \uD83D\uDE80"}</p>
+          <p className="ms-mail-body__footer">Use Paddle when you want a faster path from MVP to paid product.</p>
         </div>
       </div>
     </div>
@@ -347,30 +347,31 @@ function ReportsPreview() {
 function MonitoringPreview() {
   const columns = [
     {
-      title: "NEW",
-      count: 2,
+      title: "TODAY",
+      count: 3,
       tone: "blue",
       cards: [
-        { title: "Add OAuth integration", meta: "JD · 2h ago" },
-        { title: "Update API docs", meta: "SK · 4h ago" },
+        { title: "Brand the homepage", meta: "Launch surface" },
+        { title: "Wire Supabase schema", meta: "Data layer" },
+        { title: "Set up Clerk routes", meta: "Auth" },
       ],
     },
     {
-      title: "IN PROGRESS",
+      title: "THIS WEEK",
       count: 2,
       tone: "amber",
       cards: [
-        { title: "Optimize queries", meta: "AM" },
-        { title: "Fix memory leak", meta: "TC" },
+        { title: "Launch pricing flow", meta: "Billing" },
+        { title: "Generate store assets", meta: "Mobile" },
       ],
     },
     {
-      title: "MERGED",
+      title: "DONE",
       count: 2,
       tone: "green",
       cards: [
-        { title: "Auth refactor", meta: "MJ \u2713" },
-        { title: "Update deps", meta: "LW \u2713" },
+        { title: "Backend starter", meta: "Ready ✓" },
+        { title: "SEO + llms assets", meta: "Ready ✓" },
       ],
     },
   ];
@@ -404,19 +405,19 @@ function MonitoringPreview() {
 
 function ChatPreview() {
   const messages = [
-    { side: "user", content: "Is the checkout modal bug fixed?" },
+    { side: "user", content: "What should we build first to win the hackathon?" },
     {
       side: "assistant",
       content: (
         <>
-          Yes! The checkout modal bug was fixed in PR #247 by Sarah Chen. It was merged 2 days ago in commit <span className="ms-inline-code">a3b4c5d</span>.
+          Start with the visible product story: headline, onboarding path, and one magical workflow. Judges remember clarity and momentum before they remember infrastructure.
         </>
       ),
     },
-    { side: "user", content: "What was the issue?" },
+    { side: "user", content: "And after that?" },
     {
       side: "assistant",
-      content: "The modal wasn't closing properly on mobile devices. Sarah fixed it by updating the click handler in the overlay component.",
+      content: "Wire auth, data, and billing only as far as the demo or paid path needs. Keep everything else dormant until the core workflow works beautifully.",
     },
   ];
 
@@ -433,7 +434,7 @@ function ChatPreview() {
       </div>
 
       <div className="ms-chat-composer">
-        <input type="text" readOnly value="" placeholder="Ask anything about your progress..." aria-label="Ask about your progress" />
+        <input type="text" readOnly value="" placeholder="Ask the launch copilot what to do next..." aria-label="Ask the launch copilot what to do next" />
         <button type="button" aria-label="Send message">
           <ArrowRightIcon />
         </button>
@@ -443,15 +444,15 @@ function ChatPreview() {
 }
 
 function FeaturePreview({ featureId }) {
-  if (featureId === "connect") {
+  if (featureId === "providers") {
     return <ConnectPreview />;
   }
 
-  if (featureId === "reports") {
+  if (featureId === "billing") {
     return <ReportsPreview />;
   }
 
-  if (featureId === "monitoring") {
+  if (featureId === "launch-board") {
     return <MonitoringPreview />;
   }
 
@@ -472,7 +473,7 @@ export function DetailedFeaturesSection({ activeFeature, onFeatureChange, featur
           title="Let's dive into "
           accent={brand.name}
           accentItalic
-          subtitle="Explore each feature in detail with visual examples and real-world use cases."
+          subtitle="Explore the actual surfaces you can reuse for your next product launch."
         />
 
         <div className="ms-feature-layout">
@@ -523,10 +524,10 @@ export function DetailedFeaturesSection({ activeFeature, onFeatureChange, featur
 
                 {index === features.length - 1 ? (
                   <div className="ms-feature-stage__footer">
-                    <p>Ready to automate your team updates?</p>
+                    <p>Ready to turn the starter into your product?</p>
 
                     <a className="ms-button ms-button--primary" href={urls.app} target="_blank" rel="noreferrer">
-                      Get started free
+                      Use this template
                     </a>
                   </div>
                 ) : null}
@@ -545,8 +546,8 @@ export function UseCasesSection() {
       <div className="ms-container ms-container--wide">
         <SectionIntro
           eyebrow="Who it's for"
-          title="Built for the whole team"
-          subtitle="Faster standups. Better visibility. Everyone wins."
+          title="Built for ambitious builders"
+          subtitle="Hackathons, indie products, agencies, and AI SaaS teams all need leverage."
         />
 
         <div className="ms-panel ms-use-cases">

@@ -1,1 +1,17 @@
 /node_modules
+/dist
+/.env.local
+/.env.providers.local
+/.env.local
+/vite-dev.log
+/devserver.out.log
+/devserver.err.log
+/backend/.venv
+/backend/.env
+/backend/.env.local
+/backend/__pycache__
+/android/local.properties
+/android/key.properties
+*.jks
+*.keystore
+*.pyc
