@@ -10,6 +10,8 @@
 /backend/.env
 /backend/.env.local
 /backend/__pycache__
+/backend/backendserver.out.log
+/backend/backendserver.err.log
 /android/local.properties
 /android/key.properties
 *.jks
