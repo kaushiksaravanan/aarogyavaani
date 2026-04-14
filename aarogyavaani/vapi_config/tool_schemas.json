@@ -1,0 +1,72 @@
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "query_health_knowledge",
+        "description": "Search the health knowledge base and user's personal history for relevant medical and scheme information. Use this whenever the user asks about health, symptoms, medicines, government schemes, or anything medical.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "user_id": {
+              "type": "string",
+              "description": "The caller's phone number or unique identifier"
+            },
+            "query": {
+              "type": "string",
+              "description": "The user's question or topic to search for"
+            },
+            "language": {
+              "type": "string",
+              "description": "Detected language: hi, en, or kn",
+              "enum": ["hi", "en", "kn", "auto"]
+            }
+          },
+          "required": ["user_id", "query"]
+        }
+      },
+      "async": false,
+      "server": {
+        "url": "YOUR_SERVER_URL/vapi/webhook",
+        "timeoutSeconds": 20
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "save_conversation_summary",
+        "description": "Save a summary of this conversation for future reference. Call this when the conversation is ending.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "user_id": {
+              "type": "string",
+              "description": "The caller's phone number"
+            },
+            "summary": {
+              "type": "string",
+              "description": "2-3 sentence summary of what was discussed and any health concerns mentioned"
+            },
+            "language": {
+              "type": "string",
+              "description": "Primary language used in conversation"
+            },
+            "conditions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Health conditions mentioned (e.g., diabetes, pregnancy, hypertension)"
+            }
+          },
+          "required": ["user_id", "summary"]
+        }
+      },
+      "async": false,
+      "server": {
+        "url": "YOUR_SERVER_URL/vapi/webhook",
+        "timeoutSeconds": 20
+      }
+    }
+  ]
+}
