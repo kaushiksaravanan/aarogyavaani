@@ -17,3 +17,6 @@
 *.jks
 *.keystore
 *.pyc
+/aarogyavaani/.env
+/aarogyavaani/.env.local
+/aarogyavaani/__pycache__
