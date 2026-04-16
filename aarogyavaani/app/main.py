@@ -19,12 +19,12 @@ from qdrant_client import QdrantClient, models
 from app.config import (
     APP_SERVICE_NAME,
     APP_VERSION,
-    HF_API_TOKEN,
     HF_API_URL,
     KNOWLEDGE_COLLECTION,
     MEMORY_COLLECTION,
     QDRANT_API_KEY,
     QDRANT_URL,
+    get_hf_key_pool,
     VAPI_SECRET,
     SERVER_URL,
 )
@@ -126,30 +126,69 @@ async def verify_vapi_secret(request: Request, call_next):
 
 
 async def _embed_text(text: str) -> list[float]:
-    """Call HuggingFace Inference API to get an embedding vector."""
+    """Call HuggingFace Inference API with key rotation on rate limits."""
     client = get_http_client()
-    headers = {"Content-Type": "application/json"}
-    if HF_API_TOKEN:
-        headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
+    pool = get_hf_key_pool()
 
-    resp = await client.post(
-        HF_API_URL,
-        json={"inputs": text, "options": {"wait_for_model": True}},
-        headers=headers,
+    last_error = None
+    # Try up to pool.size + 1 times (rotate through all keys)
+    for attempt in range(pool.size + 1):
+        key = pool.get()
+        headers: dict[str, str] = {"Content-Type": "application/json"}
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+
+        try:
+            resp = await client.post(
+                HF_API_URL,
+                json={"inputs": text, "options": {"wait_for_model": True}},
+                headers=headers,
+            )
+
+            # Rate limit or auth failure → rotate key and retry
+            if resp.status_code in (429, 401, 403, 503):
+                pool.report_failure(key)
+                logger.warning(
+                    "HF API %d with key ...%s (attempt %d/%d), rotating",
+                    resp.status_code,
+                    key[-6:] if key else "none",
+                    attempt + 1,
+                    pool.size + 1,
+                )
+                last_error = f"HTTP {resp.status_code}"
+                continue
+
+            resp.raise_for_status()
+            pool.report_success(key)
+
+            vector = resp.json()
+
+            # HF returns [[...]] for a single input
+            if isinstance(vector[0], list):
+                vector = vector[0]
+
+            # L2-normalise
+            norm = sum(x * x for x in vector) ** 0.5
+            if norm > 0:
+                vector = [x / norm for x in vector]
+
+            return vector
+
+        except httpx.HTTPStatusError:
+            pool.report_failure(key)
+            last_error = f"HTTP error with key ...{key[-6:] if key else 'none'}"
+            continue
+        except httpx.RequestError as exc:
+            # Network error — not key-related, don't rotate
+            raise HTTPException(
+                status_code=502, detail="Embedding service unreachable"
+            ) from exc
+
+    # All keys exhausted
+    raise HTTPException(
+        status_code=429,
+        detail=f"All embedding API keys rate-limited ({last_error})",
     )
-    resp.raise_for_status()
-    vector = resp.json()
-
-    # HF returns [[...]] for a single input
-    if isinstance(vector[0], list):
-        vector = vector[0]
-
-    # L2-normalise
-    norm = sum(x * x for x in vector) ** 0.5
-    if norm > 0:
-        vector = [x / norm for x in vector]
-
-    return vector
 
 
 async def _embed_query(text: str) -> list[float]:

@@ -30,6 +30,8 @@ const ENV_VARS = {
   HF_API_URL:
     "https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-large-instruct",
   HF_API_TOKEN: "REMOVED",
+  HF_API_TOKEN_1: "REMOVED",
+  HF_API_TOKEN_2: "REMOVED",
 };
 
 const VERCEL_API = "https://api.vercel.com";

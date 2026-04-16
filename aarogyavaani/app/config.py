@@ -17,8 +17,23 @@ HF_API_URL = os.getenv(
     "HF_API_URL",
     "https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-large-instruct",
 )
+# Single key fallback (kept for backward compat)
 HF_API_TOKEN = os.getenv("HF_API_TOKEN", "")
 EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "1024"))
+
+# --- Key pools (loaded lazily to avoid import-time side effects) ---
+_hf_pool = None
+
+
+def get_hf_key_pool():
+    """Lazy-init HuggingFace key pool from HF_API_TOKEN, HF_API_TOKEN_1, ..."""
+    global _hf_pool
+    if _hf_pool is None:
+        from app.keypool import KeyPool  # noqa: local import to avoid circular
+
+        _hf_pool = KeyPool.from_env("HF_API_TOKEN", cooldown=60)
+    return _hf_pool
+
 
 # --- Qdrant collection names ---
 KNOWLEDGE_COLLECTION = os.getenv("KNOWLEDGE_COLLECTION", "health_knowledge_base")
