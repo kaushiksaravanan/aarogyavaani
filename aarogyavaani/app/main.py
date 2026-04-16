@@ -46,27 +46,36 @@ logging.basicConfig(
 logger = logging.getLogger("aarogyavaani")
 
 # ---------------------------------------------------------------------------
-# Global singletons — initialised once at startup
+# Global singletons — lazy-initialised for Vercel serverless compatibility
 # ---------------------------------------------------------------------------
 http_client: Optional[httpx.AsyncClient] = None
 qdrant: Optional[QdrantClient] = None
 
 
+def get_http_client() -> httpx.AsyncClient:
+    global http_client
+    if http_client is None:
+        http_client = httpx.AsyncClient(timeout=30.0)
+    return http_client
+
+
+def get_qdrant() -> QdrantClient:
+    global qdrant
+    if qdrant is None:
+        qdrant = QdrantClient(
+            url=QDRANT_URL,
+            api_key=QDRANT_API_KEY if QDRANT_API_KEY else None,
+            timeout=30,
+        )
+    return qdrant
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global http_client, qdrant
-
-    logger.info("Initialising httpx client for HuggingFace Inference API ...")
-    http_client = httpx.AsyncClient(timeout=30.0)
-    logger.info("httpx client ready (HF API URL: %s).", HF_API_URL)
-
-    logger.info("Connecting to Qdrant at %s ...", QDRANT_URL)
-    qdrant = QdrantClient(
-        url=QDRANT_URL,
-        api_key=QDRANT_API_KEY if QDRANT_API_KEY else None,
-        timeout=30,
-    )
-    logger.info("Qdrant client ready.")
+    logger.info("Pre-warming clients...")
+    get_http_client()
+    get_qdrant()
+    logger.info("Clients ready.")
 
     yield  # app runs here
 
@@ -103,7 +112,10 @@ async def verify_vapi_secret(request: Request, call_next):
     if request.url.path.startswith("/vapi/") and VAPI_SECRET:
         secret = request.headers.get("x-vapi-secret", "")
         if secret != VAPI_SECRET:
-            logger.warning("Unauthorized webhook call from %s", request.client.host)
+            logger.warning(
+                "Unauthorized webhook call from %s",
+                request.client.host if request.client else "unknown",
+            )
             return JSONResponse(status_code=401, content={"error": "Unauthorized"})
     return await call_next(request)
 
@@ -115,11 +127,12 @@ async def verify_vapi_secret(request: Request, call_next):
 
 async def _embed_text(text: str) -> list[float]:
     """Call HuggingFace Inference API to get an embedding vector."""
+    client = get_http_client()
     headers = {"Content-Type": "application/json"}
     if HF_API_TOKEN:
         headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
 
-    resp = await http_client.post(
+    resp = await client.post(
         HF_API_URL,
         json={"inputs": text, "options": {"wait_for_model": True}},
         headers=headers,
@@ -152,7 +165,7 @@ async def _embed_passage(text: str) -> list[float]:
 def _search_knowledge(
     query_vec: list[float],
     language: str = "auto",
-    top_k: int = 5,
+    top_k: int = 3,
 ) -> list[dict]:
     """Vector search over the health knowledge base collection."""
     query_filter = None
@@ -166,7 +179,7 @@ def _search_knowledge(
             ]
         )
 
-    results = qdrant.query_points(
+    results = get_qdrant().query_points(
         collection_name=KNOWLEDGE_COLLECTION,
         query=query_vec,
         query_filter=query_filter,
@@ -187,7 +200,7 @@ def _search_knowledge(
 def _search_memory(user_id: str, query_vec: list[float], top_k: int = 3) -> list[dict]:
     """Vector search over user_memory filtered by user_id (phone)."""
     try:
-        results = qdrant.query_points(
+        results = get_qdrant().query_points(
             collection_name=MEMORY_COLLECTION,
             query=query_vec,
             query_filter=models.Filter(
@@ -273,8 +286,8 @@ async def query_health_knowledge(req: HealthQueryRequest):
     try:
         query_vec = await _embed_query(req.query)
     except Exception as exc:
-        logger.error("Embedding failed: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Embedding error: {exc}")
+        logger.error("Embedding failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal processing error")
 
     knowledge = _search_knowledge(query_vec, language=req.language, top_k=req.top_k)
     memory = _search_memory(req.user_id, query_vec)
@@ -303,8 +316,8 @@ async def save_conversation_summary(req: ConversationSummary):
     try:
         passage_vec = await _embed_passage(req.summary)
     except Exception as exc:
-        logger.error("Embedding failed: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Embedding error: {exc}")
+        logger.error("Embedding failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal processing error")
 
     point_id = str(uuid4())
     payload = {
@@ -317,7 +330,7 @@ async def save_conversation_summary(req: ConversationSummary):
     }
 
     try:
-        qdrant.upsert(
+        get_qdrant().upsert(
             collection_name=MEMORY_COLLECTION,
             points=[
                 models.PointStruct(
@@ -328,8 +341,8 @@ async def save_conversation_summary(req: ConversationSummary):
             ],
         )
     except Exception as exc:
-        logger.error("Qdrant upsert failed: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Qdrant upsert error: {exc}")
+        logger.error("Qdrant upsert failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal processing error")
 
     logger.info("Saved memory point %s for user %s", point_id, req.user_id)
     return {"status": "ok", "point_id": point_id}
@@ -363,11 +376,14 @@ async def vapi_webhook(payload: VapiMessage):
         if fn_name == "query_health_knowledge":
             req = HealthQueryRequest(**fn_params)
             resp = await query_health_knowledge(req)
+            context_text = resp.context
+            if len(context_text) > 2000:
+                context_text = context_text[:2000] + "\n\n[...truncated for brevity]"
             return {
                 "results": [
                     {
                         "toolCallId": message.get("functionCall", {}).get("id", ""),
-                        "result": resp.context,
+                        "result": context_text,
                     }
                 ]
             }

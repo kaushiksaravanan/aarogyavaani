@@ -10,20 +10,7 @@ const STATUS_MAP = {
   ended: { label: 'Call ended', color: 'hsl(45 21% 50%)' },
 }
 
-/* warm pulse keyframes injected once */
-const pulseStyleId = 'warm-pulse-keyframes'
-if (typeof document !== 'undefined' && !document.getElementById(pulseStyleId)) {
-  const style = document.createElement('style')
-  style.id = pulseStyleId
-  style.textContent = `
-    @keyframes warmPulse {
-      0%   { box-shadow: 0 0 0 0 hsla(28, 45%, 57%, 0.45); }
-      70%  { box-shadow: 0 0 0 28px hsla(28, 45%, 57%, 0); }
-      100% { box-shadow: 0 0 0 0 hsla(28, 45%, 57%, 0); }
-    }
-  `
-  document.head.appendChild(style)
-}
+/* warm pulse keyframes are in index.css */
 
 export default function CallPage() {
   const [status, setStatus] = useState('idle')
@@ -33,6 +20,12 @@ export default function CallPage() {
   const [duration, setDuration] = useState(0)
   const timerRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const statusRef = useRef(status)
+
+  // Keep statusRef in sync
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -45,25 +38,25 @@ export default function CallPage() {
   useEffect(() => {
     const vapi = getVapi()
 
-    vapi.on('call-start', () => {
+    const onCallStart = () => {
       setStatus('active')
       setDuration(0)
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000)
-    })
+    }
 
-    vapi.on('call-end', () => {
+    const onCallEnd = () => {
       setStatus('ended')
       if (timerRef.current) clearInterval(timerRef.current)
       setTimeout(() => setStatus('idle'), 3000)
-    })
+    }
 
-    vapi.on('message', (msg) => {
+    const onMessage = (msg) => {
       if (msg.type === 'transcript') {
         setMessages(prev => {
           const existing = prev.find(m => m.id === msg.transcriptId && m.role === msg.role)
           if (existing) {
             return prev.map(m => m.id === msg.transcriptId && m.role === msg.role
-              ? { ...m, text: msg.transcript }
+              ? { ...m, text: msg.transcript, final: msg.transcriptType === 'final' }
               : m
             )
           }
@@ -76,24 +69,31 @@ export default function CallPage() {
           }]
         })
       }
-      if (msg.type === 'speech-update') {
-        // speech status
-      }
-    })
+    }
 
-    vapi.on('volume-level', (level) => {
-      setVolumeLevel(level)
-    })
+    const onVolumeLevel = (level) => setVolumeLevel(level)
 
-    vapi.on('error', (err) => {
+    const onError = (err) => {
       console.error('Vapi error:', err)
       setStatus('idle')
       if (timerRef.current) clearInterval(timerRef.current)
-    })
+    }
+
+    vapi.on('call-start', onCallStart)
+    vapi.on('call-end', onCallEnd)
+    vapi.on('message', onMessage)
+    vapi.on('volume-level', onVolumeLevel)
+    vapi.on('error', onError)
 
     return () => {
-      vapi.removeAllListeners?.()
+      vapi.off('call-start', onCallStart)
+      vapi.off('call-end', onCallEnd)
+      vapi.off('message', onMessage)
+      vapi.off('volume-level', onVolumeLevel)
+      vapi.off('error', onError)
       if (timerRef.current) clearInterval(timerRef.current)
+      // Stop any active call on unmount
+      try { vapi.stop() } catch (_) { /* may not be in call */ }
     }
   }, [])
 
@@ -131,7 +131,7 @@ export default function CallPage() {
   const isActive = status === 'active' || status === 'connecting'
 
   return (
-    <div className="h-screen flex flex-col" style={{ background: '#120b07' }}>
+    <div className="h-full flex flex-col" style={{ background: '#120b07' }}>
       {/* Header */}
       <div
         className="px-8 py-5 flex items-center justify-between"
@@ -182,6 +182,7 @@ export default function CallPage() {
           {/* Call button */}
           <button
             onClick={handleCall}
+            aria-label={isActive ? 'End call' : 'Start call'}
             className="relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300"
             style={
               isActive
@@ -210,6 +211,7 @@ export default function CallPage() {
             <div className="flex items-center gap-4 mt-8">
               <button
                 onClick={toggleMute}
+                aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
                 style={
                   isMuted

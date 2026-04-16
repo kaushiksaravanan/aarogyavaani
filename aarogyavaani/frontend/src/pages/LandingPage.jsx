@@ -538,6 +538,65 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ───────── Builder / Academic Background ───────── */}
+      <section style={{ background: 'linear-gradient(180deg, #fff8f1, #fffdf9)', padding: '5rem 0' }}>
+        <div style={{ maxWidth: '64rem', margin: '0 auto', padding: '0 1.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'hsl(28 45% 15%)', letterSpacing: '-0.035em' }}>
+              Built with <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>rigor</span>
+            </h2>
+            <p style={{ color: 'hsl(45 21% 40%)', marginTop: '0.75rem', maxWidth: '32rem', marginInline: 'auto' }}>
+              Grounded in Carnegie Mellon University's AI & ML curriculum
+            </p>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '52rem', margin: '0 auto' }}>
+            {/* Fall 2025 */}
+            <div style={{
+              padding: '1.75rem',
+              borderRadius: '1.4rem',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
+              border: '1px solid rgba(34, 22, 14, 0.08)',
+              boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <span style={{ 
+                  background: 'hsl(28 45% 57% / 0.12)', color: 'hsl(28 49% 49%)',
+                  padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600
+                }}>Fall 2025</span>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-661</span>Introduction to Machine Learning</li>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>10-601</span>Generative AI</li>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-763</span>Systems and Toolchains</li>
+              </ul>
+            </div>
+            
+            {/* Spring 2026 */}
+            <div style={{
+              padding: '1.75rem',
+              borderRadius: '1.4rem',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
+              border: '1px solid rgba(34, 22, 14, 0.08)',
+              boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <span style={{ 
+                  background: 'hsl(28 45% 57% / 0.12)', color: 'hsl(28 49% 49%)',
+                  padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600
+                }}>Spring 2026</span>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-786</span>Introduction to Deep Learning</li>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-752</span>Estimation, Detection, and Learning</li>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-662</span>Principals and Engineering Applications of AI</li>
+                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>11-681</span>AI Venture Studios</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ───────── Footer ───────── */}
       <footer
         className="py-10"

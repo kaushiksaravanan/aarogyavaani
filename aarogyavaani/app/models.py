@@ -11,7 +11,7 @@ class HealthQueryRequest(BaseModel):
     user_id: str
     query: str
     language: str = "auto"
-    top_k: int = Field(default=5, ge=1, le=20)
+    top_k: int = Field(default=3, ge=1, le=20)
 
 
 class HealthQueryResponse(BaseModel):

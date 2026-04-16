@@ -10,17 +10,9 @@ export function getVapi() {
   return vapiInstance
 }
 
-export function startCall() {
-  const vapi = getVapi()
-  return vapi.start(CONFIG.VAPI_ASSISTANT_ID)
-}
-
-export function endCall() {
-  const vapi = getVapi()
-  vapi.stop()
-}
-
-export function sendMessage(message) {
-  const vapi = getVapi()
-  vapi.send({ type: 'add-message', message: { role: 'user', content: message } })
+export function destroyVapi() {
+  if (vapiInstance) {
+    try { vapiInstance.stop() } catch (_) { /* ignore */ }
+    vapiInstance = null
+  }
 }

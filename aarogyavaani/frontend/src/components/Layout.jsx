@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Phone, LayoutDashboard, Home, Heart } from 'lucide-react'
+import { Phone, LayoutDashboard, Heart } from 'lucide-react'
 
 const navItems = [
   { path: '/call', label: 'Voice Call', icon: Phone },
@@ -13,7 +13,7 @@ export default function Layout() {
     <div className="min-h-screen flex" style={{ background: '#fffdf9' }}>
       {/* Sidebar */}
       <aside
-        className="w-64 flex flex-col"
+        className="w-64 hidden md:flex flex-col"
         style={{
           background: '#22160e',
           borderRight: '1px solid hsl(28 45% 20%)',
