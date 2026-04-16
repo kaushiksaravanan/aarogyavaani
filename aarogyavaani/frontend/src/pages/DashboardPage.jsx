@@ -9,6 +9,18 @@ const stats = [
   { label: 'Target Users', value: '500M+', detail: 'Rural India population', icon: Users },
 ]
 
+/* shared inline style fragments */
+const cardBorder = 'rgba(34, 22, 14, 0.08)'
+const cardGradient = 'linear-gradient(135deg, #ffffff 0%, #fff8f1 100%)'
+const warmShadow = '0 1px 3px rgba(76,46,18,0.06), 0 4px 14px rgba(76,46,18,0.05)'
+const warmShadowHover = '0 4px 20px rgba(76,46,18,0.10)'
+const espresso = 'hsl(28 45% 15%)'
+const espressoSoft = 'hsl(45 21% 40%)'
+const copper = 'hsl(28 45% 57%)'
+const copperStrong = 'hsl(28 49% 49%)'
+const headingFont = '"Instrument Serif", Georgia, serif'
+const bodyFont = '"Inter", system-ui, sans-serif'
+
 export default function DashboardPage() {
   const [backendStatus, setBackendStatus] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -20,36 +32,71 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div
+      className="p-8 max-w-5xl"
+      style={{ background: '#fffdf9', fontFamily: bodyFont, minHeight: '100%' }}
+    >
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-text-secondary mt-1">System status and quick actions for AarogyaVaani</p>
+        <h1
+          className="text-2xl"
+          style={{ fontFamily: headingFont, fontWeight: 600, color: espresso }}
+        >
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: espressoSoft }}>
+          System status and quick actions for AarogyaVaani
+        </p>
       </div>
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
         <Link
           to="/call"
-          className="bg-primary-600 text-white rounded-xl p-6 hover:bg-primary-700 transition-colors group"
+          className="rounded-2xl p-6 transition-all duration-200 group"
+          style={{
+            background: `linear-gradient(135deg, ${copperStrong}, ${copper})`,
+            color: '#ffffff',
+            boxShadow: '0 4px 20px rgba(76,46,18,0.25)',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(76,46,18,0.35)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(76,46,18,0.25)'
+            e.currentTarget.style.transform = 'translateY(0)'
+          }}
         >
           <Phone className="w-8 h-8 mb-3 group-hover:scale-110 transition-transform" />
           <h3 className="font-semibold text-lg">Start Voice Call</h3>
-          <p className="text-primary-100 text-sm mt-1">Talk to AarogyaVaani right now</p>
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.82)' }}>
+            Talk to AarogyaVaani right now
+          </p>
         </Link>
-        <div className="bg-surface-elevated rounded-xl p-6 border border-gray-100">
-          <Activity className="w-8 h-8 text-primary-600 mb-3" />
-          <h3 className="font-semibold text-lg text-gray-900">System Status</h3>
+
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: cardGradient,
+            border: `1px solid ${cardBorder}`,
+            boxShadow: warmShadow,
+          }}
+        >
+          <Activity className="w-8 h-8 mb-3" style={{ color: copper }} />
+          <h3 className="font-semibold text-lg" style={{ color: espresso }}>
+            System Status
+          </h3>
           {loading ? (
-            <p className="text-sm text-text-muted mt-1">Checking...</p>
+            <p className="text-sm mt-1" style={{ color: espressoSoft }}>Checking...</p>
           ) : backendStatus?.status === 'ok' ? (
             <div className="flex items-center gap-2 mt-1">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-700">All systems operational</span>
+              <CheckCircle className="w-4 h-4" style={{ color: '#00a544' }} />
+              <span className="text-sm" style={{ color: '#15803d' }}>All systems operational</span>
             </div>
           ) : (
             <div className="flex items-center gap-2 mt-1">
-              <XCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-700">Backend unreachable</span>
+              <XCircle className="w-4 h-4" style={{ color: '#dc2626' }} />
+              <span className="text-sm" style={{ color: '#b91c1c' }}>Backend unreachable</span>
             </div>
           )}
         </div>
@@ -60,41 +107,100 @@ export default function DashboardPage() {
         {stats.map((s, i) => {
           const Icon = s.icon
           return (
-            <div key={i} className="bg-surface-elevated rounded-xl p-5 border border-gray-100">
+            <div
+              key={i}
+              className="rounded-2xl p-5 transition-all duration-200"
+              style={{
+                background: cardGradient,
+                border: `1px solid ${cardBorder}`,
+                boxShadow: warmShadow,
+                cursor: 'default',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = warmShadowHover
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = warmShadow
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <Icon className="w-5 h-5 text-primary-500" />
-                <span className="text-2xl font-bold text-gray-900">{s.value}</span>
+                <Icon className="w-5 h-5" style={{ color: copper }} />
+                <span
+                  className="text-2xl font-bold"
+                  style={{ color: espresso }}
+                >
+                  {s.value}
+                </span>
               </div>
-              <p className="text-sm font-medium text-gray-900">{s.label}</p>
-              <p className="text-xs text-text-muted mt-0.5">{s.detail}</p>
+              <p className="text-sm font-medium" style={{ color: espresso }}>
+                {s.label}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: espressoSoft }}>
+                {s.detail}
+              </p>
             </div>
           )
         })}
       </div>
 
       {/* Service health */}
-      <div className="bg-surface-elevated rounded-xl border border-gray-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Service Health</h2>
+      <div
+        className="overflow-hidden"
+        style={{
+          background: cardGradient,
+          border: `1px solid ${cardBorder}`,
+          boxShadow: warmShadow,
+          borderRadius: '1.4rem',
+        }}
+      >
+        <div
+          className="px-5 py-4"
+          style={{ borderBottom: `1px solid ${cardBorder}` }}
+        >
+          <h2
+            className="font-semibold"
+            style={{ color: espresso, fontFamily: headingFont }}
+          >
+            Service Health
+          </h2>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div>
           {[
             { name: 'FastAPI Backend', url: 'aarogyavaani-api.vercel.app', icon: Server, status: backendStatus?.status === 'ok' },
             { name: 'Qdrant Vector DB', url: 'Qdrant Cloud (EU-West-1)', icon: Database, status: true },
             { name: 'Vapi Voice AI', url: 'GPT-4o + ElevenLabs + Deepgram', icon: Phone, status: true },
             { name: 'HuggingFace Embeddings', url: 'multilingual-e5-large-instruct', icon: Brain, status: true },
-          ].map((service, i) => (
-            <div key={i} className="px-5 py-3.5 flex items-center justify-between">
+          ].map((service, i, arr) => (
+            <div
+              key={i}
+              className="px-5 py-3.5 flex items-center justify-between"
+              style={
+                i < arr.length - 1
+                  ? { borderBottom: `1px solid ${cardBorder}` }
+                  : {}
+              }
+            >
               <div className="flex items-center gap-3">
-                <service.icon className="w-4.5 h-4.5 text-text-muted" />
+                <service.icon className="w-4.5 h-4.5" style={{ color: espressoSoft }} />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                  <p className="text-xs text-text-muted">{service.url}</p>
+                  <p className="text-sm font-medium" style={{ color: espresso }}>
+                    {service.name}
+                  </p>
+                  <p className="text-xs" style={{ color: espressoSoft }}>
+                    {service.url}
+                  </p>
                 </div>
               </div>
-              <div className={`flex items-center gap-1.5 text-xs font-medium ${service.status ? 'text-green-600' : 'text-red-600'}`}>
-                <span className={`w-2 h-2 rounded-full ${service.status ? 'bg-green-500' : 'bg-red-500'}`} />
-                {service.status ? 'Healthy' : 'Down'}
+              <div className="flex items-center gap-1.5 text-xs font-medium">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: service.status ? '#00a544' : '#dc2626' }}
+                />
+                <span style={{ color: service.status ? '#15803d' : '#b91c1c' }}>
+                  {service.status ? 'Healthy' : 'Down'}
+                </span>
               </div>
             </div>
           ))}
@@ -102,11 +208,32 @@ export default function DashboardPage() {
       </div>
 
       {/* Tech stack */}
-      <div className="mt-8 bg-surface-elevated rounded-xl border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">Tech Stack</h2>
+      <div
+        className="mt-8 p-5"
+        style={{
+          background: cardGradient,
+          border: `1px solid ${cardBorder}`,
+          boxShadow: warmShadow,
+          borderRadius: '1.4rem',
+        }}
+      >
+        <h2
+          className="font-semibold mb-3"
+          style={{ color: espresso, fontFamily: headingFont }}
+        >
+          Tech Stack
+        </h2>
         <div className="flex flex-wrap gap-2">
           {['Vapi', 'Qdrant', 'GPT-4o', 'FastAPI', 'ElevenLabs', 'Deepgram', 'HuggingFace', 'React', 'Vercel', 'Python'].map(tech => (
-            <span key={tech} className="bg-gray-50 text-text-secondary text-xs px-3 py-1.5 rounded-full border border-gray-100">
+            <span
+              key={tech}
+              className="text-xs px-3 py-1.5 rounded-full"
+              style={{
+                background: '#fff8f1',
+                color: espressoSoft,
+                border: `1px solid ${cardBorder}`,
+              }}
+            >
               {tech}
             </span>
           ))}

@@ -4,10 +4,25 @@ import { getVapi } from '../lib/vapi'
 import { CONFIG } from '../lib/config'
 
 const STATUS_MAP = {
-  idle: { label: 'Ready to call', color: 'text-text-secondary' },
-  connecting: { label: 'Connecting...', color: 'text-accent-500' },
-  active: { label: 'Call active', color: 'text-primary-600' },
-  ended: { label: 'Call ended', color: 'text-text-muted' },
+  idle: { label: 'Ready to call', color: 'hsl(45 21% 65%)' },
+  connecting: { label: 'Connecting...', color: 'hsl(28 45% 57%)' },
+  active: { label: 'Call active', color: 'hsl(28 49% 49%)' },
+  ended: { label: 'Call ended', color: 'hsl(45 21% 50%)' },
+}
+
+/* warm pulse keyframes injected once */
+const pulseStyleId = 'warm-pulse-keyframes'
+if (typeof document !== 'undefined' && !document.getElementById(pulseStyleId)) {
+  const style = document.createElement('style')
+  style.id = pulseStyleId
+  style.textContent = `
+    @keyframes warmPulse {
+      0%   { box-shadow: 0 0 0 0 hsla(28, 45%, 57%, 0.45); }
+      70%  { box-shadow: 0 0 0 28px hsla(28, 45%, 57%, 0); }
+      100% { box-shadow: 0 0 0 0 hsla(28, 45%, 57%, 0); }
+    }
+  `
+  document.head.appendChild(style)
 }
 
 export default function CallPage() {
@@ -116,17 +131,38 @@ export default function CallPage() {
   const isActive = status === 'active' || status === 'connecting'
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col" style={{ background: '#120b07' }}>
       {/* Header */}
-      <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between">
+      <div
+        className="px-8 py-5 flex items-center justify-between"
+        style={{
+          background: '#1b130d',
+          borderBottom: '1px solid hsl(28 45% 20%)',
+        }}
+      >
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">Voice Call</h1>
-          <p className="text-sm text-text-secondary">Talk to AarogyaVaani in Hindi, English, or Kannada</p>
+          <h1
+            className="text-lg font-semibold"
+            style={{
+              color: 'hsl(45 21% 95%)',
+              fontFamily: '"Instrument Serif", Georgia, serif',
+            }}
+          >
+            Voice Call
+          </h1>
+          <p className="text-sm" style={{ color: 'hsl(45 21% 65%)' }}>
+            Talk to AarogyaVaani in Hindi, English, or Kannada
+          </p>
         </div>
         {status === 'active' && (
           <div className="flex items-center gap-3 text-sm">
-            <Clock className="w-4 h-4 text-primary-600" />
-            <span className="font-mono text-primary-700 font-medium">{formatDuration(duration)}</span>
+            <Clock className="w-4 h-4" style={{ color: 'hsl(28 45% 57%)' }} />
+            <span
+              className="font-mono font-medium"
+              style={{ color: 'hsl(28 45% 57%)' }}
+            >
+              {formatDuration(duration)}
+            </span>
           </div>
         )}
       </div>
@@ -136,22 +172,30 @@ export default function CallPage() {
         {/* Call interface */}
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           {/* Status */}
-          <p className={`text-sm font-medium mb-8 ${STATUS_MAP[status].color}`}>
+          <p
+            className="text-sm font-medium mb-8"
+            style={{ color: STATUS_MAP[status].color }}
+          >
             {STATUS_MAP[status].label}
           </p>
 
           {/* Call button */}
           <button
             onClick={handleCall}
-            className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 ${
+            className="relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300"
+            style={
               isActive
-                ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
-                : 'bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-600/30'
-            }`}
+                ? {
+                    background: '#dc2626',
+                    boxShadow: '0 10px 36px rgba(220, 38, 38, 0.35)',
+                  }
+                : {
+                    background: 'hsl(28 45% 57%)',
+                    boxShadow: '0 10px 36px hsla(28, 45%, 45%, 0.4)',
+                    animation: 'warmPulse 2.4s cubic-bezier(0.4,0,0.6,1) infinite',
+                  }
+            }
           >
-            {!isActive && (
-              <span className="absolute inset-0 rounded-full bg-primary-400 animate-ping opacity-20" />
-            )}
             {status === 'connecting' ? (
               <Loader2 className="w-10 h-10 text-white animate-spin" />
             ) : isActive ? (
@@ -166,18 +210,33 @@ export default function CallPage() {
             <div className="flex items-center gap-4 mt-8">
               <button
                 onClick={toggleMute}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                  isMuted ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+                style={
+                  isMuted
+                    ? { background: 'rgba(220,38,38,0.15)', color: '#ef4444' }
+                    : { background: '#271a10', color: 'hsl(45 21% 65%)' }
+                }
+                onMouseEnter={e => {
+                  if (!isMuted) e.currentTarget.style.background = '#32210f'
+                }}
+                onMouseLeave={e => {
+                  if (!isMuted) e.currentTarget.style.background = '#271a10'
+                }}
               >
                 {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
-              <div className="flex items-center gap-1">
-                <Volume2 className="w-4 h-4 text-text-muted" />
-                <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-4 h-4" style={{ color: 'hsl(45 21% 50%)' }} />
+                <div
+                  className="w-24 h-1.5 rounded-full overflow-hidden"
+                  style={{ background: '#271a10' }}
+                >
                   <div
-                    className="h-full bg-primary-500 rounded-full transition-all duration-100"
-                    style={{ width: `${Math.min(volumeLevel * 100, 100)}%` }}
+                    className="h-full rounded-full transition-all duration-100"
+                    style={{
+                      width: `${Math.min(volumeLevel * 100, 100)}%`,
+                      background: 'hsl(28 45% 57%)',
+                    }}
                   />
                 </div>
               </div>
@@ -186,22 +245,47 @@ export default function CallPage() {
 
           {/* Helper text */}
           {status === 'idle' && (
-            <p className="text-sm text-text-muted mt-8 max-w-xs text-center">
+            <p
+              className="text-sm mt-8 max-w-xs text-center"
+              style={{ color: 'hsl(45 21% 50%)' }}
+            >
               Click the button to start talking. Ask about diabetes, government schemes, maternal health, and more.
             </p>
           )}
         </div>
 
         {/* Transcript panel */}
-        <div className="w-96 border-l border-gray-100 bg-surface-elevated flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-900">Live Transcript</h2>
+        <div
+          className="w-96 flex flex-col"
+          style={{
+            background: '#22160e',
+            borderLeft: '1px solid hsl(28 45% 20%)',
+          }}
+        >
+          <div
+            className="px-5 py-4"
+            style={{ borderBottom: '1px solid hsl(28 45% 20%)' }}
+          >
+            <h2
+              className="text-sm font-semibold"
+              style={{
+                color: 'hsl(45 21% 95%)',
+                fontFamily: '"Instrument Serif", Georgia, serif',
+              }}
+            >
+              Live Transcript
+            </h2>
           </div>
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
             {messages.length === 0 ? (
               <div className="text-center py-16">
-                <Heart className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                <p className="text-sm text-text-muted">Transcript will appear here during the call</p>
+                <Heart
+                  className="w-8 h-8 mx-auto mb-3"
+                  style={{ color: 'hsl(28 45% 25%)' }}
+                />
+                <p className="text-sm" style={{ color: 'hsl(45 21% 50%)' }}>
+                  Transcript will appear here during the call
+                </p>
               </div>
             ) : (
               messages.map((msg, i) => (
@@ -210,11 +294,23 @@ export default function CallPage() {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] px-3.5 py-2 rounded-xl text-sm ${
+                    className="max-w-[85%] px-3.5 py-2 text-sm"
+                    style={
                       msg.role === 'user'
-                        ? 'bg-primary-600 text-white rounded-tr-none'
-                        : 'bg-gray-100 text-gray-800 rounded-tl-none'
-                    } ${!msg.final ? 'opacity-60' : ''}`}
+                        ? {
+                            background: 'hsl(28 45% 57%)',
+                            color: '#ffffff',
+                            borderRadius: '12px 4px 12px 12px',
+                            opacity: msg.final ? 1 : 0.6,
+                            boxShadow: '0 2px 8px rgba(76,46,18,0.25)',
+                          }
+                        : {
+                            background: '#271a10',
+                            color: 'hsl(45 21% 90%)',
+                            borderRadius: '4px 12px 12px 12px',
+                            opacity: msg.final ? 1 : 0.6,
+                          }
+                    }
                   >
                     {msg.text}
                   </div>
