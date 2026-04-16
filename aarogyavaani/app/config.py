@@ -12,10 +12,12 @@ load_dotenv()
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
 
-# --- Embedding model ---
-EMBEDDING_MODEL = os.getenv(
-    "EMBEDDING_MODEL", "intfloat/multilingual-e5-large-instruct"
+# --- Embedding model (HuggingFace Inference API) ---
+HF_API_URL = os.getenv(
+    "HF_API_URL",
+    "https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-large-instruct",
 )
+HF_API_TOKEN = os.getenv("HF_API_TOKEN", "")
 EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "1024"))
 
 # --- Qdrant collection names ---

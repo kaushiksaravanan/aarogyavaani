@@ -10,16 +10,17 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from qdrant_client import QdrantClient, models
-from sentence_transformers import SentenceTransformer
 
 from app.config import (
     APP_SERVICE_NAME,
     APP_VERSION,
-    EMBEDDING_MODEL,
+    HF_API_TOKEN,
+    HF_API_URL,
     KNOWLEDGE_COLLECTION,
     MEMORY_COLLECTION,
     QDRANT_API_KEY,
@@ -47,20 +48,17 @@ logger = logging.getLogger("aarogyavaani")
 # ---------------------------------------------------------------------------
 # Global singletons — initialised once at startup
 # ---------------------------------------------------------------------------
-embedding_model: Optional[SentenceTransformer] = None
+http_client: Optional[httpx.AsyncClient] = None
 qdrant: Optional[QdrantClient] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global embedding_model, qdrant
+    global http_client, qdrant
 
-    logger.info("Loading embedding model: %s ...", EMBEDDING_MODEL)
-    embedding_model = SentenceTransformer(EMBEDDING_MODEL)
-    logger.info(
-        "Embedding model loaded (dim=%d).",
-        embedding_model.get_sentence_embedding_dimension(),
-    )
+    logger.info("Initialising httpx client for HuggingFace Inference API ...")
+    http_client = httpx.AsyncClient(timeout=30.0)
+    logger.info("httpx client ready (HF API URL: %s).", HF_API_URL)
 
     logger.info("Connecting to Qdrant at %s ...", QDRANT_URL)
     qdrant = QdrantClient(
@@ -73,6 +71,8 @@ async def lifespan(app: FastAPI):
     yield  # app runs here
 
     # Shutdown
+    if http_client:
+        await http_client.aclose()
     if qdrant:
         qdrant.close()
     logger.info("Shutdown complete.")
@@ -113,16 +113,40 @@ async def verify_vapi_secret(request: Request, call_next):
 # ---------------------------------------------------------------------------
 
 
-def _embed_query(text: str) -> list[float]:
+async def _embed_text(text: str) -> list[float]:
+    """Call HuggingFace Inference API to get an embedding vector."""
+    headers = {"Content-Type": "application/json"}
+    if HF_API_TOKEN:
+        headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
+
+    resp = await http_client.post(
+        HF_API_URL,
+        json={"inputs": text, "options": {"wait_for_model": True}},
+        headers=headers,
+    )
+    resp.raise_for_status()
+    vector = resp.json()
+
+    # HF returns [[...]] for a single input
+    if isinstance(vector[0], list):
+        vector = vector[0]
+
+    # L2-normalise
+    norm = sum(x * x for x in vector) ** 0.5
+    if norm > 0:
+        vector = [x / norm for x in vector]
+
+    return vector
+
+
+async def _embed_query(text: str) -> list[float]:
     """Embed a search query. E5 models expect 'query: ' prefix for queries."""
-    vec = embedding_model.encode(f"query: {text}", normalize_embeddings=True)
-    return vec.tolist()
+    return await _embed_text(f"query: {text}")
 
 
-def _embed_passage(text: str) -> list[float]:
+async def _embed_passage(text: str) -> list[float]:
     """Embed a document/passage. E5 models expect 'passage: ' prefix."""
-    vec = embedding_model.encode(f"passage: {text}", normalize_embeddings=True)
-    return vec.tolist()
+    return await _embed_text(f"passage: {text}")
 
 
 def _search_knowledge(
@@ -247,7 +271,7 @@ async def query_health_knowledge(req: HealthQueryRequest):
     )
 
     try:
-        query_vec = _embed_query(req.query)
+        query_vec = await _embed_query(req.query)
     except Exception as exc:
         logger.error("Embedding failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Embedding error: {exc}")
@@ -277,7 +301,7 @@ async def save_conversation_summary(req: ConversationSummary):
     )
 
     try:
-        passage_vec = _embed_passage(req.summary)
+        passage_vec = await _embed_passage(req.summary)
     except Exception as exc:
         logger.error("Embedding failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Embedding error: {exc}")
