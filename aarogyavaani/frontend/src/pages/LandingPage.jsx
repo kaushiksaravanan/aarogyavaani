@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Phone, Heart, ArrowRight, Mic, MessageCircle, Globe, Brain, Clock, Shield } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 /* ─── data ────────────────────────────────────────────────────────── */
 
@@ -71,6 +71,46 @@ const t = {
 }
 
 const serif = { fontFamily: '"Instrument Serif", Georgia, serif' }
+
+/* ─── FAQ accordion item ─────────────────────────────────────────── */
+
+function FaqItem({ q, a }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{
+      borderRadius: '1rem',
+      border: '1px solid rgba(34,22,14,0.08)',
+      background: open ? 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,241,0.98))' : 'transparent',
+      overflow: 'hidden',
+      transition: 'background 280ms ease',
+    }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%', padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+          fontFamily: 'inherit', fontSize: '0.95rem', fontWeight: 500, color: 'hsl(28 45% 15%)',
+        }}
+      >
+        {q}
+        <span style={{
+          transform: open ? 'rotate(45deg)' : 'rotate(0)',
+          transition: 'transform 280ms ease',
+          fontSize: '1.25rem', color: 'hsl(28 45% 57%)', flexShrink: 0, marginLeft: '1rem',
+        }}>+</span>
+      </button>
+      <div style={{
+        maxHeight: open ? '200px' : '0',
+        opacity: open ? 1 : 0,
+        padding: open ? '0 1.25rem 1rem' : '0 1.25rem',
+        overflow: 'hidden',
+        transition: 'max-height 380ms ease, opacity 280ms ease, padding 280ms ease',
+      }}>
+        <p style={{ fontSize: '0.875rem', color: 'hsl(45 21% 40%)', lineHeight: 1.7 }}>{a}</p>
+      </div>
+    </div>
+  )
+}
 
 /* ─── component ──────────────────────────────────────────────────── */
 
@@ -538,61 +578,166 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────── Builder / Academic Background ───────── */}
-      <section style={{ background: 'linear-gradient(180deg, #fff8f1, #fffdf9)', padding: '5rem 0' }}>
+      {/* ───────── Use Cases ───────── */}
+      <section data-reveal style={{ background: 'linear-gradient(180deg, #fff8f1, #fffdf9)', padding: '5rem 0' }}>
         <div style={{ maxWidth: '64rem', margin: '0 auto', padding: '0 1.5rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'hsl(28 45% 15%)', letterSpacing: '-0.035em' }}>
-              Built with <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>rigor</span>
+              Who is <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>AarogyaVaani</span> for?
             </h2>
-            <p style={{ color: 'hsl(45 21% 40%)', marginTop: '0.75rem', maxWidth: '32rem', marginInline: 'auto' }}>
-              Grounded in Carnegie Mellon University's AI & ML curriculum
-            </p>
+            <p style={{ color: 'hsl(45 21% 40%)', marginTop: '0.75rem' }}>Real healthcare guidance for real people — no app, no reading, just your voice.</p>
           </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '52rem', margin: '0 auto' }}>
-            {/* Fall 2025 */}
-            <div style={{
-              padding: '1.75rem',
-              borderRadius: '1.4rem',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
-              border: '1px solid rgba(34, 22, 14, 0.08)',
-              boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                <span style={{ 
-                  background: 'hsl(28 45% 57% / 0.12)', color: 'hsl(28 49% 49%)',
-                  padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600
-                }}>Fall 2025</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+            {[
+              { icon: '🩺', title: 'Diabetes Patients', tagline: 'शुगर की देखभाल', desc: 'Daily diet guidance, blood sugar tracking reminders, medicine schedules, and when to see a doctor — all explained simply.' },
+              { icon: '🤰', title: 'Expecting Mothers', tagline: 'माँ और बच्चे की सुरक्षा', desc: 'Antenatal care guidance, nutrition tips, danger signs to watch for, and how to access Janani Suraksha Yojana benefits.' },
+              { icon: '👴', title: 'Elderly Care', tagline: 'बुज़ुर्गों का सहारा', desc: 'No apps to learn — just call and talk. Remembers past conversations, speaks slowly, confirms understanding every step.' },
+              { icon: '🏛️', title: 'Government Schemes', tagline: 'सरकारी योजनाओं की जानकारी', desc: 'Ayushman Bharat card, PM-JAY, health helplines — step-by-step guidance to access free healthcare benefits.' },
+            ].map((uc, i) => (
+              <div key={uc.title} className="stagger-item" style={{
+                padding: '1.5rem',
+                borderRadius: '1.4rem',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
+                border: '1px solid rgba(34, 22, 14, 0.08)',
+                boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
+                transition: 'transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease',
+                cursor: 'default',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(158, 92, 31, 0.16)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(34, 22, 14, 0.08)'; }}
+              >
+                <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>{uc.icon}</div>
+                <h3 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: '1.25rem', color: 'hsl(28 45% 15%)', marginBottom: '0.25rem' }}>{uc.title}</h3>
+                <p lang="hi" style={{ fontSize: '0.8rem', color: 'hsl(28 45% 57%)', fontStyle: 'italic', marginBottom: '0.75rem' }}>{uc.tagline}</p>
+                <p style={{ fontSize: '0.875rem', color: 'hsl(45 21% 40%)', lineHeight: 1.6 }}>{uc.desc}</p>
               </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-661</span>Introduction to Machine Learning</li>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>10-601</span>Generative AI</li>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-763</span>Systems and Toolchains</li>
-              </ul>
-            </div>
-            
-            {/* Spring 2026 */}
-            <div style={{
-              padding: '1.75rem',
-              borderRadius: '1.4rem',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
-              border: '1px solid rgba(34, 22, 14, 0.08)',
-              boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                <span style={{ 
-                  background: 'hsl(28 45% 57% / 0.12)', color: 'hsl(28 49% 49%)',
-                  padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600
-                }}>Spring 2026</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── Testimonials ───────── */}
+      <section data-reveal style={{ background: '#fffdf9', padding: '5rem 0' }}>
+        <div style={{ maxWidth: '64rem', margin: '0 auto', padding: '0 1.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'hsl(28 45% 15%)', letterSpacing: '-0.035em' }}>
+              Voices from the <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>community</span>
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+            {[
+              { name: 'Ramesh Kumar', detail: '58, Farmer, Uttar Pradesh', quote: '"Pehle mujhe doctor ke paas jaane mein dar lagta tha. Ab main AarogyaVaani ko phone karta hoon — woh meri baat samajhti hai aur simple mein batati hai ki kya karna hai. Meri sugar ab control mein hai."', stars: 5 },
+              { name: 'Sunita Devi', detail: '32, Expecting Mother, Rajasthan', quote: '"Mere gaon mein koi lady doctor nahi hai. AarogyaVaani ne mujhe bataya ki pregnancy mein kya khana chahiye aur kab hospital jaana chahiye. Mera beta healthy paida hua."', stars: 5 },
+              { name: 'Lakshmi Amma', detail: '72, Grandmother, Karnataka', quote: '"Nange phone app use maadoke bartilla. AarogyaVaani jote Kannada-alli maataadtaare, nanna health bagge keluttaare, idu nange thumba sahaya aagide."', stars: 5 },
+            ].map((t, i) => (
+              <div key={t.name} className="stagger-item" style={{
+                padding: '1.75rem',
+                borderRadius: '1.4rem',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
+                border: '1px solid rgba(34, 22, 14, 0.08)',
+                boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
+              }}>
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '1rem' }}>
+                  {Array.from({ length: t.stars }).map((_, si) => (
+                    <span key={si} style={{ color: 'hsl(28 45% 57%)', fontSize: '1rem' }}>★</span>
+                  ))}
+                </div>
+                <p lang={t.name === 'Lakshmi Amma' ? 'kn' : 'hi'} style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)', lineHeight: 1.7, fontStyle: 'italic', marginBottom: '1.25rem' }}>{t.quote}</p>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}>{t.name}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'hsl(45 21% 40%)' }}>{t.detail}</p>
+                </div>
               </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-786</span>Introduction to Deep Learning</li>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-752</span>Estimation, Detection, and Learning</li>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>18-662</span>Principals and Engineering Applications of AI</li>
-                <li style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}><span style={{ color: 'hsl(45 21% 40%)', fontFamily: 'monospace', fontSize: '0.8rem', marginRight: '0.5rem' }}>11-681</span>AI Venture Studios</li>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── Pricing ───────── */}
+      <section id="pricing" data-reveal style={{ background: 'linear-gradient(180deg, #fff8f1, #fffdf9)', padding: '5rem 0' }}>
+        <div style={{ maxWidth: '64rem', margin: '0 auto', padding: '0 1.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'hsl(28 45% 15%)', letterSpacing: '-0.035em' }}>
+              Simple, honest <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>pricing</span>
+            </h2>
+            <p style={{ color: 'hsl(45 21% 40%)', marginTop: '0.75rem' }}>Start free. Upgrade when your family needs more.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', maxWidth: '56rem', margin: '0 auto' }}>
+            {/* Free */}
+            <div className="stagger-item" style={{ padding: '2rem', borderRadius: '1.4rem', background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))', border: '1px solid rgba(34,22,14,0.08)', boxShadow: '0 26px 90px rgba(76,46,18,0.08)' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'hsl(45 21% 40%)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Free</p>
+              <div style={{ margin: '1rem 0' }}>
+                <span style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: '2.5rem', color: 'hsl(28 45% 15%)' }}>₹0</span>
+                <span style={{ fontSize: '0.85rem', color: 'hsl(45 21% 40%)' }}>/month</span>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'hsl(45 21% 40%)', marginBottom: '1.5rem' }}>Get started with basic health guidance.</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {['5 voice calls per month', 'Hindi & English', 'Basic health info', 'Government scheme guidance', 'Emergency helpline numbers'].map(f => (
+                  <li key={f} style={{ fontSize: '0.85rem', color: 'hsl(28 45% 15%)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'hsl(28 45% 57%)' }}>✓</span> {f}
+                  </li>
+                ))}
               </ul>
+              <a href="/call" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', border: '1px solid rgba(34,22,14,0.15)', color: 'hsl(28 45% 15%)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease' }}>Start Free</a>
             </div>
+            {/* Pro */}
+            <div className="stagger-item" style={{ padding: '2rem', borderRadius: '1.4rem', background: 'linear-gradient(180deg, hsl(28 45% 13%), hsl(28 45% 10%))', border: '1px solid hsl(28 45% 20%)', boxShadow: '0 36px 120px rgba(16,9,4,0.28)', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: '-0.75rem', left: '50%', transform: 'translateX(-50%)', background: 'hsl(28 45% 57%)', color: 'white', padding: '0.25rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>Most Popular</span>
+              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'hsl(45 21% 65%)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pro</p>
+              <div style={{ margin: '1rem 0' }}>
+                <span style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: '2.5rem', color: 'hsl(45 21% 95%)' }}>₹299</span>
+                <span style={{ fontSize: '0.85rem', color: 'hsl(45 21% 65%)' }}>/month</span>
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'hsl(28 45% 57%)', marginBottom: '0.5rem' }}>₹2,499/year — save 30%</p>
+              <p style={{ fontSize: '0.85rem', color: 'hsl(45 21% 65%)', marginBottom: '1.5rem' }}>Complete healthcare companion for your family.</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {['Unlimited voice calls', 'Hindi, English & Kannada', 'Full conversation memory', 'Family profiles (up to 5)', 'Call history & export', 'Auto health tasks + calendar', 'Monthly health reports', 'Priority response queue'].map(f => (
+                  <li key={f} style={{ fontSize: '0.85rem', color: 'hsl(45 21% 95% / 0.85)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'hsl(28 45% 57%)' }}>✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/call" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', background: 'hsl(28 45% 57%)', color: 'white', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease', boxShadow: '0 24px 48px rgba(188,126,65,0.22)' }}>Start Pro Trial</a>
+            </div>
+            {/* Enterprise */}
+            <div className="stagger-item" style={{ padding: '2rem', borderRadius: '1.4rem', background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))', border: '1px solid rgba(34,22,14,0.08)', boxShadow: '0 26px 90px rgba(76,46,18,0.08)' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'hsl(45 21% 40%)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enterprise</p>
+              <div style={{ margin: '1rem 0' }}>
+                <span style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: '2.5rem', color: 'hsl(28 45% 15%)' }}>Custom</span>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'hsl(45 21% 40%)', marginBottom: '1.5rem' }}>For NGOs, hospitals, and government programs.</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {['Everything in Pro', 'Custom knowledge base', 'White-label branding', 'API access', 'Dedicated support', 'SLA & compliance'].map(f => (
+                  <li key={f} style={{ fontSize: '0.85rem', color: 'hsl(28 45% 15%)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'hsl(28 45% 57%)' }}>✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="mailto:hello@aarogyavaani.in" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', border: '1px solid rgba(34,22,14,0.15)', color: 'hsl(28 45% 15%)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease' }}>Contact Us</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── FAQ ───────── */}
+      <section data-reveal style={{ background: '#fffdf9', padding: '5rem 0' }}>
+        <div style={{ maxWidth: '42rem', margin: '0 auto', padding: '0 1.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'hsl(28 45% 15%)', letterSpacing: '-0.035em' }}>
+              Frequently asked <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>questions</span>
+            </h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {[
+              { q: 'Is AarogyaVaani a real doctor?', a: 'No. AarogyaVaani is an AI health assistant that provides general health information and guidance. It is not a substitute for professional medical advice. For any serious condition, we always recommend visiting your nearest doctor or hospital.' },
+              { q: 'What languages does it support?', a: 'Currently Hindi, English, and Kannada. The AI automatically detects which language you\'re speaking and responds in the same language. More languages are coming soon.' },
+              { q: 'Is my health data safe?', a: 'Your conversations are stored securely and used only to provide better guidance in future calls. We do not share your data with third parties. You can request deletion of your data at any time.' },
+              { q: 'How much does it cost?', a: 'AarogyaVaani offers a free tier with 5 calls per month. For unlimited access, family profiles, and health reports, the Pro plan is ₹299/month or ₹2,499/year.' },
+              { q: 'Can my whole family use this?', a: 'Yes! With the Pro plan, you can create up to 5 family member profiles. Each family member gets their own health history and personalized guidance.' },
+              { q: 'What if there\'s a medical emergency?', a: 'AarogyaVaani will immediately tell you to call 108 (ambulance) or go to the nearest hospital. It never delays emergency care with questions. For emergencies, always call 108 first.' },
+            ].map((faq, i) => (
+              <FaqItem key={i} q={faq.q} a={faq.a} />
+            ))}
           </div>
         </div>
       </section>
@@ -619,9 +764,11 @@ export default function LandingPage() {
               AarogyaVaani
             </span>
           </div>
-          <p className="text-xs" style={{ color: t.footerText }}>
-            Built for HackBLR 2026 — Vapi x Qdrant Hackathon
-          </p>
+          <div className="flex items-center gap-6 text-xs" style={{ color: t.footerText }}>
+            <a href="#pricing" style={{ color: 'inherit', textDecoration: 'none' }}>Pricing</a>
+            <Link to="/blog" style={{ color: 'inherit', textDecoration: 'none' }}>Blog</Link>
+            <span>Built for HackBLR 2026</span>
+          </div>
         </div>
       </footer>
     </div>

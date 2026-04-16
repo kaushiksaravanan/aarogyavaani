@@ -205,6 +205,42 @@
   50% { box-shadow: 0 0 0 20px rgba(188, 126, 65, 0); }
 }
 
+/* ─── Page transitions ─── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeSlideUp 420ms ease-out both;
+}
+
+/* ─── Staggered card entrance ─── */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.stagger-item.revealed {
+  animation: fadeSlideUp 420ms ease-out both;
+}
+.stagger-item:nth-child(1).revealed { animation-delay: 0ms; }
+.stagger-item:nth-child(2).revealed { animation-delay: 80ms; }
+.stagger-item:nth-child(3).revealed { animation-delay: 160ms; }
+.stagger-item:nth-child(4).revealed { animation-delay: 240ms; }
+.stagger-item:nth-child(5).revealed { animation-delay: 320ms; }
+.stagger-item:nth-child(6).revealed { animation-delay: 400ms; }
+
+/* ─── Scroll reveal ─── */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 520ms ease-out, transform 520ms ease-out;
+}
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

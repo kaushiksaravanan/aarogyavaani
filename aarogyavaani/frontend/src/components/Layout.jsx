@@ -1,9 +1,11 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Phone, LayoutDashboard, Heart } from 'lucide-react'
+import { Phone, LayoutDashboard, Heart, Clock, User } from 'lucide-react'
 
 const navItems = [
   { path: '/call', label: 'Voice Call', icon: Phone },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/history', label: 'Call History', icon: Clock },
+  { path: '/profile', label: 'Health Profile', icon: User },
 ]
 
 export default function Layout() {

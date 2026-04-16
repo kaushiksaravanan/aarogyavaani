@@ -19,20 +19,25 @@ from qdrant_client import QdrantClient, models
 from app.config import (
     APP_SERVICE_NAME,
     APP_VERSION,
-    HF_API_URL,
     KNOWLEDGE_COLLECTION,
     MEMORY_COLLECTION,
     QDRANT_API_KEY,
     QDRANT_URL,
-    get_hf_key_pool,
     VAPI_SECRET,
     SERVER_URL,
 )
+from app.embeddings import get_embedding_router
 from app.models import (
+    CallHistoryEntry,
+    CallHistoryResponse,
     ConversationSummary,
     HealthQueryRequest,
     HealthQueryResponse,
+    HealthReportResponse,
     HealthResponse,
+    HealthTask,
+    TaskGenerationRequest,
+    TaskGenerationResponse,
     VapiMessage,
 )
 
@@ -99,7 +104,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://aarogyavaani-app.vercel.app",
+        "https://aarogyavaani-app-kaushiks-projects-ef17dfbd.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -126,69 +136,14 @@ async def verify_vapi_secret(request: Request, call_next):
 
 
 async def _embed_text(text: str) -> list[float]:
-    """Call HuggingFace Inference API with key rotation on rate limits."""
+    """Embed text using multi-provider router with automatic failover."""
     client = get_http_client()
-    pool = get_hf_key_pool()
-
-    last_error = None
-    # Try up to pool.size + 1 times (rotate through all keys)
-    for attempt in range(pool.size + 1):
-        key = pool.get()
-        headers: dict[str, str] = {"Content-Type": "application/json"}
-        if key:
-            headers["Authorization"] = f"Bearer {key}"
-
-        try:
-            resp = await client.post(
-                HF_API_URL,
-                json={"inputs": text, "options": {"wait_for_model": True}},
-                headers=headers,
-            )
-
-            # Rate limit or auth failure → rotate key and retry
-            if resp.status_code in (429, 401, 403, 503):
-                pool.report_failure(key)
-                logger.warning(
-                    "HF API %d with key ...%s (attempt %d/%d), rotating",
-                    resp.status_code,
-                    key[-6:] if key else "none",
-                    attempt + 1,
-                    pool.size + 1,
-                )
-                last_error = f"HTTP {resp.status_code}"
-                continue
-
-            resp.raise_for_status()
-            pool.report_success(key)
-
-            vector = resp.json()
-
-            # HF returns [[...]] for a single input
-            if isinstance(vector[0], list):
-                vector = vector[0]
-
-            # L2-normalise
-            norm = sum(x * x for x in vector) ** 0.5
-            if norm > 0:
-                vector = [x / norm for x in vector]
-
-            return vector
-
-        except httpx.HTTPStatusError:
-            pool.report_failure(key)
-            last_error = f"HTTP error with key ...{key[-6:] if key else 'none'}"
-            continue
-        except httpx.RequestError as exc:
-            # Network error — not key-related, don't rotate
-            raise HTTPException(
-                status_code=502, detail="Embedding service unreachable"
-            ) from exc
-
-    # All keys exhausted
-    raise HTTPException(
-        status_code=429,
-        detail=f"All embedding API keys rate-limited ({last_error})",
-    )
+    router = get_embedding_router()
+    try:
+        return await router.embed(text, client)
+    except RuntimeError as exc:
+        logger.error("All embedding providers failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Embedding service unavailable")
 
 
 async def _embed_query(text: str) -> list[float]:
@@ -577,6 +532,204 @@ async def vapi_webhook(payload: VapiMessage):
     return JSONResponse(
         content={"status": "ok", "message": f"Unhandled type: {msg_type}"}
     )
+
+
+# ---------------------------------------------------------------------------
+# Task generation, call history & health report endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.post("/generate_tasks", response_model=TaskGenerationResponse)
+async def generate_tasks(req: TaskGenerationRequest):
+    """Use OpenRouter GPT-4o to extract health tasks from a conversation summary."""
+    import json as _json
+
+    client = get_http_client()
+    openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
+    if not openrouter_key:
+        raise HTTPException(status_code=503, detail="Task generation not configured")
+
+    prompt = f"""Extract 2-5 actionable health tasks from this patient conversation summary. 
+Return ONLY a JSON array. Each item: {{"task": "...", "priority": "high|medium|low", "due_suggestion": "this week|today|within 1 month|daily|as needed", "category": "medication|checkup|diet|exercise|appointment|scheme"}}
+
+Summary: {req.summary}
+
+JSON array:"""
+
+    try:
+        resp = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            json={
+                "model": "openai/gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 500,
+            },
+            headers={
+                "Authorization": f"Bearer {openrouter_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=20.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        content = data["choices"][0]["message"]["content"].strip()
+
+        # Parse JSON from response (may have markdown fences)
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+        tasks_raw = _json.loads(content)
+        tasks = [HealthTask(**t) for t in tasks_raw]
+        return TaskGenerationResponse(tasks=tasks)
+    except Exception as exc:
+        logger.error("Task generation failed: %s", exc, exc_info=True)
+        # Return empty tasks rather than error — graceful degradation
+        return TaskGenerationResponse(tasks=[], status="generation_failed")
+
+
+@app.get("/call_history/{user_id}", response_model=CallHistoryResponse)
+async def get_call_history(user_id: str, limit: int = 20):
+    """Fetch call history for a user from Qdrant user_memory collection."""
+    try:
+        qdrant_client = get_qdrant()
+        results = qdrant_client.scroll(
+            collection_name=MEMORY_COLLECTION,
+            scroll_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="user_phone",
+                        match=models.MatchValue(value=user_id),
+                    )
+                ]
+            ),
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        points = results[0] if results else []
+        calls = []
+        for point in points:
+            payload = point.payload or {}
+            calls.append(
+                CallHistoryEntry(
+                    summary=payload.get("history_summary", payload.get("summary", "")),
+                    timestamp=payload.get("timestamp", ""),
+                    conditions=payload.get("conditions", []),
+                    language=payload.get(
+                        "preferred_lang", payload.get("language", "hi")
+                    ),
+                )
+            )
+
+        # Sort by timestamp descending
+        calls.sort(key=lambda c: c.timestamp, reverse=True)
+
+        return CallHistoryResponse(
+            user_id=user_id,
+            calls=calls,
+            total=len(calls),
+        )
+    except Exception as exc:
+        logger.error("Call history fetch failed: %s", exc, exc_info=True)
+        return CallHistoryResponse(user_id=user_id, calls=[], total=0, status="error")
+
+
+@app.get("/health_report/{user_id}", response_model=HealthReportResponse)
+async def get_health_report(user_id: str):
+    """Generate a health report by aggregating user's call history."""
+    from datetime import datetime, timezone
+
+    try:
+        qdrant_client = get_qdrant()
+        results = qdrant_client.scroll(
+            collection_name=MEMORY_COLLECTION,
+            scroll_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="user_phone",
+                        match=models.MatchValue(value=user_id),
+                    )
+                ]
+            ),
+            limit=100,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        points = results[0] if results else []
+
+        all_conditions = set()
+        timestamps = []
+        summaries = []
+
+        for point in points:
+            payload = point.payload or {}
+            conditions = payload.get("conditions", [])
+            all_conditions.update(conditions)
+            ts = payload.get("timestamp", "")
+            if ts:
+                timestamps.append(ts)
+            summary = payload.get("history_summary", payload.get("summary", ""))
+            if summary:
+                summaries.append(summary)
+
+        timestamps.sort()
+
+        # Generate recommendations based on conditions
+        recommendations = []
+        condition_recs = {
+            "diabetes": [
+                "Check fasting blood sugar monthly",
+                "Follow prescribed diet plan",
+                "Take medication regularly",
+                "Get HbA1c test every 3 months",
+            ],
+            "hypertension": [
+                "Monitor blood pressure weekly",
+                "Reduce salt intake",
+                "Walk 30 minutes daily",
+            ],
+            "pregnancy": [
+                "Complete all 4 antenatal checkups",
+                "Take iron and folic acid daily",
+                "Watch for danger signs",
+            ],
+        }
+        for condition in all_conditions:
+            recs = condition_recs.get(
+                condition.lower(), [f"Consult doctor about {condition}"]
+            )
+            recommendations.extend(recs)
+
+        if not recommendations:
+            recommendations = [
+                "Schedule a general health checkup",
+                "Call AarogyaVaani for guidance",
+            ]
+
+        return HealthReportResponse(
+            user_id=user_id,
+            total_calls=len(points),
+            conditions_tracked=sorted(all_conditions),
+            first_call=timestamps[0] if timestamps else "",
+            last_call=timestamps[-1] if timestamps else "",
+            recent_summaries=summaries[-5:],
+            recommendations=recommendations,
+            report_generated_at=datetime.now(timezone.utc).isoformat(),
+        )
+    except Exception as exc:
+        logger.error("Health report failed: %s", exc, exc_info=True)
+        return HealthReportResponse(
+            user_id=user_id,
+            total_calls=0,
+            conditions_tracked=[],
+            recent_summaries=[],
+            recommendations=["Unable to generate report. Please try again."],
+            report_generated_at=datetime.now(timezone.utc).isoformat(),
+            status="error",
+        )
 
 
 if __name__ == "__main__":
