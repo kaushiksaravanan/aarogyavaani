@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Phone, Activity, Database, Server, CheckCircle, XCircle, Globe, Heart, Brain, Users } from 'lucide-react'
-import { healthCheck } from '../lib/api'
-
-const stats = [
-  { label: 'Languages Supported', value: '3', detail: 'Hindi, English, Kannada', icon: Globe },
-  { label: 'Knowledge Chunks', value: '23', detail: 'Health, schemes, maternal', icon: Brain },
-  { label: 'Target Users', value: '500M+', detail: 'Rural India population', icon: Users },
-]
+import { healthCheck, getSupportedLanguages } from '../lib/api'
 
 /* shared inline style fragments */
 const cardBorder = 'rgba(34, 22, 14, 0.08)'
@@ -24,16 +18,56 @@ const bodyFont = '"Inter", system-ui, sans-serif'
 export default function DashboardPage() {
   const [backendStatus, setBackendStatus] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [languageCount, setLanguageCount] = useState({ total: 0, featured: '' })
 
   useEffect(() => {
-    healthCheck()
-      .then(data => { setBackendStatus(data); setLoading(false) })
-      .catch(() => { setBackendStatus(null); setLoading(false) })
+    let isMounted = true
+    
+    // Fetch health check and supported languages in parallel
+    Promise.all([
+      healthCheck(),
+      getSupportedLanguages(),
+    ])
+      .then(([healthData, langData]) => {
+        if (isMounted) {
+          setBackendStatus(healthData)
+          if (langData.languages) {
+            const featured = langData.featured || langData.languages.filter(l => l.featured)
+            const featuredNames = featured
+              .filter(l => l.code !== 'auto' && l.code !== 'multi')
+              .slice(0, 3)
+              .map(l => l.label)
+              .join(', ')
+            setLanguageCount({ 
+              total: langData.total || langData.languages.length, 
+              featured: featuredNames || 'Hindi, English, Kannada' 
+            })
+          }
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setBackendStatus(null)
+          setLanguageCount({ total: 3, featured: 'Hindi, English, Kannada' })
+          setLoading(false)
+        }
+      })
+    
+    return () => {
+      isMounted = false
+    }
   }, [])
+
+  const stats = [
+    { label: 'Languages Supported', value: languageCount.total > 0 ? String(languageCount.total) : '3', detail: languageCount.featured || 'Hindi, English, Kannada', icon: Globe },
+    { label: 'Knowledge Chunks', value: '23', detail: 'Health, schemes, maternal', icon: Brain },
+    { label: 'Target Users', value: '500M+', detail: 'Rural India population', icon: Users },
+  ]
 
   return (
     <div
-      className="p-8 max-w-5xl"
+      className="p-8 max-w-5xl mx-auto"
       style={{ background: '#fffdf9', fontFamily: bodyFont, minHeight: '100%' }}
     >
       <div className="mb-8">

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Phone, Heart, ArrowRight, Mic, MessageCircle, Globe, Brain, Clock, Shield } from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import { SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
+import useScrollReveal from '../lib/useScrollReveal'
 
 /* ─── data ────────────────────────────────────────────────────────── */
 
@@ -116,6 +118,8 @@ function FaqItem({ q, a }) {
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
+  const { isSignedIn } = useAuth()
+  useScrollReveal()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -172,26 +176,54 @@ export default function LandingPage() {
             >
               Features
             </a>
-            <Link
-              to="/call"
-              className="flex items-center gap-2 text-sm font-semibold px-5 py-2 transition-all"
-              style={{
-                background: t.primaryBtnBg,
-                color: t.primaryBtnText,
-                borderRadius: '999px',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'hsl(45 97% 92%)'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = t.primaryBtnBg
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
-            >
-              <Phone className="w-4 h-4" />
-              Start Call
-            </Link>
+            {isSignedIn ? (
+              <>
+                <Link
+                  to="/call"
+                  className="flex items-center gap-2 text-sm font-semibold px-5 py-2 transition-all"
+                  style={{
+                    background: t.primaryBtnBg,
+                    color: t.primaryBtnText,
+                    borderRadius: '999px',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'hsl(45 97% 92%)'
+                    e.currentTarget.style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = t.primaryBtnBg
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  <Phone className="w-4 h-4" />
+                  Start Call
+                </Link>
+                <UserButton />
+              </>
+            ) : (
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 text-sm font-semibold px-5 py-2 transition-all cursor-pointer"
+                  style={{
+                    background: t.primaryBtnBg,
+                    color: t.primaryBtnText,
+                    borderRadius: '999px',
+                    border: 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'hsl(45 97% 92%)'
+                    e.currentTarget.style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = t.primaryBtnBg
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  Sign In
+                </button>
+              </SignInButton>
+            )}
           </div>
         </div>
       </nav>
@@ -616,39 +648,88 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────── Testimonials ───────── */}
+      {/* ───────── Share on X CTA ───────── */}
       <section data-reveal style={{ background: '#fffdf9', padding: '5rem 0' }}>
         <div style={{ maxWidth: '64rem', margin: '0 auto', padding: '0 1.5rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'hsl(28 45% 15%)', letterSpacing: '-0.035em' }}>
-              Voices from the <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>community</span>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '3rem 2rem',
+            borderRadius: '1.4rem',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
+            border: '1px solid rgba(34, 22, 14, 0.08)',
+            boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
+          }}>
+            <div style={{ 
+              width: '4rem', 
+              height: '4rem', 
+              margin: '0 auto 1.5rem',
+              borderRadius: '50%',
+              background: '#000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </div>
+            <h2 style={{ 
+              fontFamily: '"Instrument Serif", Georgia, serif', 
+              fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', 
+              color: 'hsl(28 45% 15%)', 
+              letterSpacing: '-0.035em',
+              marginBottom: '0.75rem',
+            }}>
+              Share your <span style={{ fontStyle: 'italic', color: 'hsl(28 45% 57%)' }}>experience</span>
             </h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-            {[
-              { name: 'Ramesh Kumar', detail: '58, Farmer, Uttar Pradesh', quote: '"Pehle mujhe doctor ke paas jaane mein dar lagta tha. Ab main AarogyaVaani ko phone karta hoon — woh meri baat samajhti hai aur simple mein batati hai ki kya karna hai. Meri sugar ab control mein hai."', stars: 5 },
-              { name: 'Sunita Devi', detail: '32, Expecting Mother, Rajasthan', quote: '"Mere gaon mein koi lady doctor nahi hai. AarogyaVaani ne mujhe bataya ki pregnancy mein kya khana chahiye aur kab hospital jaana chahiye. Mera beta healthy paida hua."', stars: 5 },
-              { name: 'Lakshmi Amma', detail: '72, Grandmother, Karnataka', quote: '"Nange phone app use maadoke bartilla. AarogyaVaani jote Kannada-alli maataadtaare, nanna health bagge keluttaare, idu nange thumba sahaya aagide."', stars: 5 },
-            ].map((t, i) => (
-              <div key={t.name} className="stagger-item" style={{
-                padding: '1.75rem',
-                borderRadius: '1.4rem',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))',
-                border: '1px solid rgba(34, 22, 14, 0.08)',
-                boxShadow: '0 26px 90px rgba(76, 46, 18, 0.08)',
-              }}>
-                <div style={{ display: 'flex', gap: '2px', marginBottom: '1rem' }}>
-                  {Array.from({ length: t.stars }).map((_, si) => (
-                    <span key={si} style={{ color: 'hsl(28 45% 57%)', fontSize: '1rem' }}>★</span>
-                  ))}
-                </div>
-                <p lang={t.name === 'Lakshmi Amma' ? 'kn' : 'hi'} style={{ fontSize: '0.9rem', color: 'hsl(28 45% 15%)', lineHeight: 1.7, fontStyle: 'italic', marginBottom: '1.25rem' }}>{t.quote}</p>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'hsl(28 45% 15%)' }}>{t.name}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'hsl(45 21% 40%)' }}>{t.detail}</p>
-                </div>
-              </div>
-            ))}
+            <p style={{ 
+              color: 'hsl(45 21% 40%)', 
+              fontSize: '1rem',
+              maxWidth: '32rem',
+              margin: '0 auto 2rem',
+              lineHeight: 1.6,
+            }}>
+              Tried AarogyaVaani? We'd love to hear from you! Share your experience on X and tag us.
+            </p>
+            <a
+              href="https://x.com/intent/tweet?text=Just%20tried%20AarogyaVaani%20%E2%80%94%20a%20voice%20AI%20that%20provides%20healthcare%20guidance%20in%20Hindi%2C%20English%20%26%20Kannada.%20Perfect%20for%20rural%20India!%20%F0%9F%87%AE%F0%9F%87%B3%20%40Kaushiks0&url=https%3A%2F%2Faarogyavaani-app.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.9rem 2rem',
+                borderRadius: '999px',
+                background: '#000',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                textDecoration: 'none',
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)',
+                transition: 'all 180ms ease',
+              }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.transform = 'translateY(-2px)'; 
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25)';
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.transform = 'translateY(0)'; 
+                e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+              Share on X @Kaushiks0
+            </a>
+            <p style={{ 
+              marginTop: '1.5rem',
+              fontSize: '0.85rem',
+              color: 'hsl(45 21% 55%)',
+            }}>
+              Your feedback helps us improve healthcare access for millions
+            </p>
           </div>
         </div>
       </section>
@@ -678,7 +759,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <a href="/call" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', border: '1px solid rgba(34,22,14,0.15)', color: 'hsl(28 45% 15%)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease' }}>Start Free</a>
+              <Link to="/call" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', border: '1px solid rgba(34,22,14,0.15)', color: 'hsl(28 45% 15%)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease' }}>Start Free</Link>
             </div>
             {/* Pro */}
             <div className="stagger-item" style={{ padding: '2rem', borderRadius: '1.4rem', background: 'linear-gradient(180deg, hsl(28 45% 13%), hsl(28 45% 10%))', border: '1px solid hsl(28 45% 20%)', boxShadow: '0 36px 120px rgba(16,9,4,0.28)', position: 'relative' }}>
@@ -697,7 +778,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <a href="/call" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', background: 'hsl(28 45% 57%)', color: 'white', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease', boxShadow: '0 24px 48px rgba(188,126,65,0.22)' }}>Start Pro Trial</a>
+              <Link to="/call" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', borderRadius: '999px', background: 'hsl(28 45% 57%)', color: 'white', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', transition: 'all 180ms ease', boxShadow: '0 24px 48px rgba(188,126,65,0.22)' }}>Start Pro Trial</Link>
             </div>
             {/* Enterprise */}
             <div className="stagger-item" style={{ padding: '2rem', borderRadius: '1.4rem', background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,241,0.98))', border: '1px solid rgba(34,22,14,0.08)', boxShadow: '0 26px 90px rgba(76,46,18,0.08)' }}>

@@ -30,6 +30,7 @@ const RELATIONSHIPS = [
 const STORAGE_KEY = 'aarogyavaani_profile'
 
 const defaultProfile = {
+  userId: 'user_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
   name: '',
   age: '',
   gender: '',
@@ -121,7 +122,11 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-      return { ...defaultProfile, ...stored }
+      const merged = { ...defaultProfile, ...stored }
+      if (!merged.userId) {
+        merged.userId = 'user_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+      }
+      return merged
     } catch {
       return { ...defaultProfile }
     }
@@ -161,7 +166,14 @@ export default function ProfilePage() {
   }
 
   const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+    const toSave = profile.userId
+      ? profile
+      : {
+          ...profile,
+          userId: 'user_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+        }
+    setProfile(toSave)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
     // Clear any existing toast timer
     if (toastTimeout.current) clearTimeout(toastTimeout.current)
     setToast(true)
@@ -169,13 +181,25 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
+    if (profile.userId) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+        if (!stored.userId) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, userId: profile.userId }))
+        }
+      } catch {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ userId: profile.userId }))
+      }
+    }
+
     return () => {
       if (toastTimeout.current) clearTimeout(toastTimeout.current)
     }
-  }, [])
+    // profile.userId is generated once in the state initializer; this sync is one-time.
+  }, [profile.userId])
 
   return (
-    <div style={{ background: t.surface, minHeight: '100vh', padding: '2rem', position: 'relative' }}>
+    <div style={{ background: t.surface, minHeight: '100%', padding: '2rem', position: 'relative' }}>
       {/* Success Toast */}
       <div
         style={{
@@ -200,11 +224,11 @@ export default function ProfilePage() {
 
       <div style={{ maxWidth: '40rem', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ ...serif, fontSize: '2rem', color: t.espresso, letterSpacing: '-0.035em', lineHeight: 1.05 }}>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h1 style={{ ...serif, fontSize: '2rem', color: t.espresso, letterSpacing: '-0.035em', lineHeight: 1.15, marginBottom: '0.5rem' }}>
             Health Profile
           </h1>
-          <p style={{ color: t.soft, fontSize: '0.9rem', marginTop: '0.35rem' }}>
+          <p style={{ color: t.soft, fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: 1.5 }}>
             Help AarogyaVaani give you better, personalized guidance
           </p>
         </div>
@@ -376,7 +400,7 @@ export default function ProfilePage() {
           {/* Add member form */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '2fr 1.5fr 0.8fr auto',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
             gap: '0.6rem', alignItems: 'end',
           }}>
             <WarmInput
@@ -413,7 +437,7 @@ export default function ProfilePage() {
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 180ms ease',
                 boxShadow: '0 4px 14px rgba(188, 126, 65, 0.18)',
-                alignSelf: 'end', height: 'fit-content',
+                alignSelf: 'end', height: 'fit-content', minHeight: '3rem',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.background = t.copperStrong
