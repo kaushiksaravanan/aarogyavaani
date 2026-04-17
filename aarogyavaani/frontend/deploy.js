@@ -19,8 +19,7 @@ const __dirname = path.dirname(__filename);
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
-const VERCEL_TOKEN =
-  "REMOVED";
+const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
 const PROJECT_NAME = "aarogyavaani-app";
 
 const VERCEL_API = "https://api.vercel.com";
@@ -30,11 +29,20 @@ const PROJECT_ROOT = __dirname;
 
 // Directories / files to skip
 const EXCLUDE = new Set([
+  ".env",
   "node_modules",
   ".vercel",
   "deploy.js",
   ".git",
   ".gitignore",
+  "src",
+  "public",
+  "index.html",
+  "nul",
+  "package-lock.json",
+  "package.json",
+  "update_prompt.mjs",
+  "vite.config.js",
 ]);
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -104,8 +112,8 @@ async function createDeployment(files) {
     name: PROJECT_NAME,
     files,
     projectSettings: {
-      framework: "vite",
-      buildCommand: "npm run build",
+      framework: null,
+      buildCommand: "",
       outputDirectory: "dist",
     },
     target: "production",

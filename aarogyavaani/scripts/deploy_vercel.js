@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
-const VERCEL_TOKEN = "REMOVED";
+const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
 const PROJECT_NAME = "aarogyavaani-api";
 
 const ENV_VARS = {
@@ -50,6 +50,7 @@ const EXCLUDE = new Set([
   "__pycache__",
   ".venv",
   "node_modules",
+  "frontend",
   "scripts",
   ".vercel",
   ".git",

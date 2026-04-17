@@ -78,8 +78,12 @@
   
   h1, h2, h3 {
     font-family: var(--font-heading);
-    letter-spacing: -0.035em;
-    line-height: 1.05;
+    letter-spacing: -0.018em;
+    line-height: 1.12;
+  }
+
+  p, label, input, select, button, li, span {
+    letter-spacing: 0.002em;
   }
 }
 
@@ -205,6 +209,17 @@
   50% { box-shadow: 0 0 0 20px rgba(188, 126, 65, 0); }
 }
 
+/* ─── Red flag emergency ─── */
+@keyframes emergencyPulse {
+  0%, 100% { background: rgba(153, 27, 27, 0.95); }
+  50% { background: rgba(185, 28, 28, 0.98); }
+}
+
+@keyframes emergencyBounce {
+  from { transform: scale(1); }
+  to { transform: scale(1.15); }
+}
+
 /* ─── Page transitions ─── */
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(12px); }
@@ -243,4 +258,132 @@
 
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* ─── Multilingual shimmer (animated language word) ─── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.multilingual-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(28 45% 57%) 0%,
+    hsl(45 97% 76%) 25%,
+    hsl(28 49% 49%) 50%,
+    hsl(45 97% 76%) 75%,
+    hsl(28 45% 57%) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+  font-style: italic;
+}
+
+/* ─── Chat bubble entrance ─── */
+@keyframes chatBubbleIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Typing cursor blink ─── */
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ─── Typing dots pulse ─── */
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ─── Language pill entrance ─── */
+@keyframes langPillIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.lang-pill {
+  animation: langPillIn 400ms ease-out both;
+}
+
+/* ─── Doctor mode pulse ─── */
+@keyframes doctorPulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsla(200, 60%, 45%, 0.4); }
+  50% { box-shadow: 0 0 0 20px hsla(200, 60%, 45%, 0); }
+}
+
+/* ─── Nurse avatar pulse rings ─── */
+@keyframes avatarPulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes avatarBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(1px) scale(1.012); }
+}
+
+@keyframes tinyWiggle {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-2deg) translateY(-1px); }
+  75% { transform: rotate(2deg) translateY(-1px); }
+}
+
+@keyframes tinySpark {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+.wiggle-chip {
+  animation: tinyWiggle 2.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.mini-spark {
+  animation: tinySpark 1.8s ease-in-out infinite;
+  display: inline-block;
+}
+
+.mini-bounce-card {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.mini-bounce-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(76, 46, 18, 0.10);
+}
+
+@media (max-width: 900px) {
+  .landing-memory-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .landing-memory-subgrid,
+  .landing-usecase-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-usecase-card {
+    padding: 1.35rem !important;
+  }
+}
+
+/* ─── Voice onboarding highlight ─── */
+@keyframes onboardGlow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(198, 117, 12, 0.3), 0 0 16px rgba(198, 117, 12, 0.1); }
+  50% { box-shadow: 0 0 0 5px rgba(198, 117, 12, 0.5), 0 0 24px rgba(198, 117, 12, 0.2); }
+}
+
+.onboard-highlight {
+  position: relative;
+  z-index: 35;
+  border-radius: 12px;
+  animation: onboardGlow 1.8s ease-in-out infinite;
 }

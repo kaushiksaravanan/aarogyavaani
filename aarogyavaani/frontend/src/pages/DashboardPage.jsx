@@ -1,278 +1,190 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Phone, Activity, Database, Server, CheckCircle, XCircle, Globe, Heart, Brain, Users } from 'lucide-react'
-import { healthCheck, getSupportedLanguages } from '../lib/api'
-
-/* shared inline style fragments */
-const cardBorder = 'rgba(34, 22, 14, 0.08)'
-const cardGradient = 'linear-gradient(135deg, #ffffff 0%, #fff8f1 100%)'
-const warmShadow = '0 1px 3px rgba(76,46,18,0.06), 0 4px 14px rgba(76,46,18,0.05)'
-const warmShadowHover = '0 4px 20px rgba(76,46,18,0.10)'
-const espresso = 'hsl(28 45% 15%)'
-const espressoSoft = 'hsl(45 21% 40%)'
-const copper = 'hsl(28 45% 57%)'
-const copperStrong = 'hsl(28 49% 49%)'
-const headingFont = '"Instrument Serif", Georgia, serif'
-const bodyFont = '"Inter", system-ui, sans-serif'
+import { Phone, Activity, Database, Server, CheckCircle, XCircle, Globe, Brain, Users, Sparkles } from 'lucide-react'
+import { healthCheck, getSupportedLanguages, getQdrantStats } from '../lib/api'
+import { AppPage, PageHeader, SurfaceCard, PrimaryButton, SecondaryButton, StatCard, Badge, appTheme } from '../components/AppPrimitives'
 
 export default function DashboardPage() {
   const [backendStatus, setBackendStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [languageCount, setLanguageCount] = useState({ total: 0, featured: '' })
+  const [qdrantStats, setQdrantStats] = useState({ knowledge: 0, memory: 0 })
 
   useEffect(() => {
     let isMounted = true
-    
-    // Fetch health check and supported languages in parallel
-    Promise.all([
-      healthCheck(),
-      getSupportedLanguages(),
-    ])
-      .then(([healthData, langData]) => {
-        if (isMounted) {
-          setBackendStatus(healthData)
-          if (langData.languages) {
-            const featured = langData.featured || langData.languages.filter(l => l.featured)
-            const featuredNames = featured
-              .filter(l => l.code !== 'auto' && l.code !== 'multi')
-              .slice(0, 3)
-              .map(l => l.label)
-              .join(', ')
-            setLanguageCount({ 
-              total: langData.total || langData.languages.length, 
-              featured: featuredNames || 'Hindi, English, Kannada' 
-            })
-          }
-          setLoading(false)
+
+    Promise.all([healthCheck(), getSupportedLanguages(), getQdrantStats()])
+      .then(([healthData, langData, statsData]) => {
+        if (!isMounted) return
+        setBackendStatus(healthData)
+
+        if (langData.languages) {
+          const featured = langData.featured || langData.languages.filter((l) => l.featured)
+          const featuredNames = featured
+            .filter((l) => l.code !== 'auto' && l.code !== 'multi')
+            .slice(0, 3)
+            .map((l) => l.label)
+            .join(', ')
+          setLanguageCount({
+            total: langData.total || langData.languages.length,
+            featured: featuredNames || 'Hindi, English, Kannada',
+          })
         }
+
+        if (statsData.status === 'ok') {
+          setQdrantStats({
+            knowledge: statsData.knowledge_chunks || 0,
+            memory: statsData.memory_chunks || 0,
+          })
+        }
+
+        setLoading(false)
       })
       .catch(() => {
-        if (isMounted) {
-          setBackendStatus(null)
-          setLanguageCount({ total: 3, featured: 'Hindi, English, Kannada' })
-          setLoading(false)
-        }
+        if (!isMounted) return
+        setBackendStatus(null)
+        setLanguageCount({ total: 3, featured: 'Hindi, English, Kannada' })
+        setLoading(false)
       })
-    
+
     return () => {
       isMounted = false
     }
   }, [])
 
+  const totalChunks = qdrantStats.knowledge + qdrantStats.memory
   const stats = [
-    { label: 'Languages Supported', value: languageCount.total > 0 ? String(languageCount.total) : '3', detail: languageCount.featured || 'Hindi, English, Kannada', icon: Globe },
-    { label: 'Knowledge Chunks', value: '23', detail: 'Health, schemes, maternal', icon: Brain },
-    { label: 'Target Users', value: '500M+', detail: 'Rural India population', icon: Users },
+    {
+      label: 'Languages Supported',
+      value: languageCount.total > 0 ? String(languageCount.total) : '3',
+      detail: languageCount.featured || 'Hindi, English, Kannada',
+      icon: Globe,
+    },
+    {
+      label: 'Qdrant Memory',
+      value: loading ? '...' : String(totalChunks),
+      detail: `${qdrantStats.knowledge} health + ${qdrantStats.memory} user memory entries`,
+      icon: Brain,
+    },
+    {
+      label: 'Target Reach',
+      value: '500M+',
+      detail: 'Rural and multilingual healthcare access',
+      icon: Users,
+    },
+  ]
+
+  const services = [
+    { name: 'FastAPI Backend', url: 'aarogyavaani-api.vercel.app', icon: Server, status: backendStatus?.status === 'ok' },
+    { name: 'Qdrant Vector DB', url: 'Qdrant Cloud (EU-West-1)', icon: Database, status: true },
+    { name: 'Vapi Voice Stack', url: 'GPT-4o + ElevenLabs + Deepgram', icon: Phone, status: true },
+    { name: 'Embeddings Layer', url: 'multilingual-e5-large-instruct', icon: Brain, status: true },
   ]
 
   return (
-    <div
-      className="p-8 max-w-5xl mx-auto"
-      style={{ background: '#fffdf9', fontFamily: bodyFont, minHeight: '100%' }}
-    >
-      <div className="mb-8">
-        <h1
-          className="text-2xl"
-          style={{ fontFamily: headingFont, fontWeight: 600, color: espresso }}
-        >
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: espressoSoft }}>
-          System status and quick actions for AarogyaVaani
-        </p>
-      </div>
+    <AppPage maxWidth="74rem">
+      <PageHeader
+        icon={Sparkles}
+        eyebrow="Overview"
+        title="AarogyaVaani dashboard"
+        subtitle="Track system health, memory coverage, and the core features powering calls, reports, and doctor handoff."
+        actions={
+          <>
+            <Link to="/knowledge"><SecondaryButton>Browse memory</SecondaryButton></Link>
+            <Link to="/call"><PrimaryButton><Phone className="w-4 h-4" />Start voice call</PrimaryButton></Link>
+          </>
+        }
+      />
 
-      {/* Quick actions */}
-      <div className="grid sm:grid-cols-2 gap-4 mb-8">
-        <Link
-          to="/call"
-          className="rounded-2xl p-6 transition-all duration-200 group"
-          style={{
-            background: `linear-gradient(135deg, ${copperStrong}, ${copper})`,
-            color: '#ffffff',
-            boxShadow: '0 4px 20px rgba(76,46,18,0.25)',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(76,46,18,0.35)'
-            e.currentTarget.style.transform = 'translateY(-1px)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.boxShadow = '0 4px 20px rgba(76,46,18,0.25)'
-            e.currentTarget.style.transform = 'translateY(0)'
-          }}
+      <div className="grid lg:grid-cols-[1.25fr_0.9fr] gap-4 mb-4">
+        <SurfaceCard
+          title="Quick actions"
+          icon={Phone}
+          bodyStyle={{ display: 'grid', gap: '0.95rem' }}
+          style={{ background: 'linear-gradient(135deg, #fff8f1 0%, #ffffff 100%)' }}
         >
-          <Phone className="w-8 h-8 mb-3 group-hover:scale-110 transition-transform" />
-          <h3 className="font-semibold text-lg">Start Voice Call</h3>
-          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.82)' }}>
-            Talk to AarogyaVaani right now
-          </p>
-        </Link>
-
-        <div
-          className="rounded-2xl p-6"
-          style={{
-            background: cardGradient,
-            border: `1px solid ${cardBorder}`,
-            boxShadow: warmShadow,
-          }}
-        >
-          <Activity className="w-8 h-8 mb-3" style={{ color: copper }} />
-          <h3 className="font-semibold text-lg" style={{ color: espresso }}>
-            System Status
-          </h3>
-          {loading ? (
-            <p className="text-sm mt-1" style={{ color: espressoSoft }}>Checking...</p>
-          ) : backendStatus?.status === 'ok' ? (
-            <div className="flex items-center gap-2 mt-1">
-              <CheckCircle className="w-4 h-4" style={{ color: '#00a544' }} />
-              <span className="text-sm" style={{ color: '#15803d' }}>All systems operational</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 mt-1">
-              <XCircle className="w-4 h-4" style={{ color: '#dc2626' }} />
-              <span className="text-sm" style={{ color: '#b91c1c' }}>Backend unreachable</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        {stats.map((s, i) => {
-          const Icon = s.icon
-          return (
-            <div
-              key={i}
-              className="rounded-2xl p-5 transition-all duration-200"
-              style={{
-                background: cardGradient,
-                border: `1px solid ${cardBorder}`,
-                boxShadow: warmShadow,
-                cursor: 'default',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.boxShadow = warmShadowHover
-                e.currentTarget.style.transform = 'translateY(-2px)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = warmShadow
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <Icon className="w-5 h-5" style={{ color: copper }} />
-                <span
-                  className="text-2xl font-bold"
-                  style={{ color: espresso }}
-                >
-                  {s.value}
-                </span>
-              </div>
-              <p className="text-sm font-medium" style={{ color: espresso }}>
-                {s.label}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: espressoSoft }}>
-                {s.detail}
-              </p>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Service health */}
-      <div
-        className="overflow-hidden"
-        style={{
-          background: cardGradient,
-          border: `1px solid ${cardBorder}`,
-          boxShadow: warmShadow,
-          borderRadius: '1.4rem',
-        }}
-      >
-        <div
-          className="px-5 py-4"
-          style={{ borderBottom: `1px solid ${cardBorder}` }}
-        >
-          <h2
-            className="font-semibold"
-            style={{ color: espresso, fontFamily: headingFont }}
-          >
-            Service Health
-          </h2>
-        </div>
-        <div>
-          {[
-            { name: 'FastAPI Backend', url: 'aarogyavaani-api.vercel.app', icon: Server, status: backendStatus?.status === 'ok' },
-            { name: 'Qdrant Vector DB', url: 'Qdrant Cloud (EU-West-1)', icon: Database, status: true },
-            { name: 'Vapi Voice AI', url: 'GPT-4o + ElevenLabs + Deepgram', icon: Phone, status: true },
-            { name: 'HuggingFace Embeddings', url: 'multilingual-e5-large-instruct', icon: Brain, status: true },
-          ].map((service, i, arr) => (
-            <div
-              key={i}
-              className="px-5 py-3.5 flex items-center justify-between"
-              style={
-                i < arr.length - 1
-                  ? { borderBottom: `1px solid ${cardBorder}` }
-                  : {}
-              }
-            >
-              <div className="flex items-center gap-3">
-                <service.icon className="w-4.5 h-4.5" style={{ color: espressoSoft }} />
-                <div>
-                  <p className="text-sm font-medium" style={{ color: espresso }}>
-                    {service.name}
-                  </p>
-                  <p className="text-xs" style={{ color: espressoSoft }}>
-                    {service.url}
-                  </p>
+          <div style={{ display: 'grid', gap: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 700, color: appTheme.espresso }}>Talk, upload, and remember in one flow</div>
+                <div style={{ fontSize: '0.9rem', lineHeight: 1.6, color: appTheme.espressoSoft, marginTop: '0.25rem' }}>
+                  Start a voice session, attach reports, then reuse that context in later conversations and doctor summaries.
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-medium">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: service.status ? '#00a544' : '#dc2626' }}
-                />
-                <span style={{ color: service.status ? '#15803d' : '#b91c1c' }}>
-                  {service.status ? 'Healthy' : 'Down'}
-                </span>
-              </div>
+              <Badge tone="copper">Hackathon demo ready</Badge>
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <Link to="/call"><PrimaryButton><Phone className="w-4 h-4" />Open call page</PrimaryButton></Link>
+              <Link to="/doctor-brief"><SecondaryButton>Generate doctor brief</SecondaryButton></Link>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard title="System status" icon={Activity}>
+          {loading ? (
+            <div style={{ color: appTheme.espressoSoft, fontSize: '0.92rem' }}>Checking backend, languages, and vector storage...</div>
+          ) : backendStatus?.status === 'ok' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', color: '#15803d', fontWeight: 600 }}>
+              <CheckCircle className="w-4 h-4" />
+              All systems operational
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', color: '#b91c1c', fontWeight: 600 }}>
+              <XCircle className="w-4 h-4" />
+              Backend unreachable
+            </div>
+          )}
+          <div style={{ marginTop: '0.9rem', fontSize: '0.84rem', lineHeight: 1.65, color: appTheme.espressoSoft }}>
+            The app depends on the backend, Qdrant memory, and the live voice pipeline staying in sync.
+          </div>
+        </SurfaceCard>
       </div>
 
-      {/* Tech stack */}
-      <div
-        className="mt-8 p-5"
-        style={{
-          background: cardGradient,
-          border: `1px solid ${cardBorder}`,
-          boxShadow: warmShadow,
-          borderRadius: '1.4rem',
-        }}
-      >
-        <h2
-          className="font-semibold mb-3"
-          style={{ color: espresso, fontFamily: headingFont }}
-        >
-          Tech Stack
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {['Vapi', 'Qdrant', 'GPT-4o', 'FastAPI', 'ElevenLabs', 'Deepgram', 'HuggingFace', 'React', 'Vercel', 'Python'].map(tech => (
-            <span
-              key={tech}
-              className="text-xs px-3 py-1.5 rounded-full"
-              style={{
-                background: '#fff8f1',
-                color: espressoSoft,
-                border: `1px solid ${cardBorder}`,
-              }}
-            >
-              {tech}
-            </span>
-          ))}
-        </div>
+      <div className="grid sm:grid-cols-3 gap-4 mb-4">
+        {stats.map((item) => (
+          <StatCard key={item.label} icon={item.icon} label={item.label} value={item.value} detail={item.detail} />
+        ))}
       </div>
-    </div>
+
+      <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
+        <SurfaceCard title="Service health" icon={Server}>
+          <div style={{ display: 'grid' }}>
+            {services.map((service, index) => (
+              <div
+                key={service.name}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.9rem 0',
+                  borderBottom: index < services.length - 1 ? `1px solid ${appTheme.border}` : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <service.icon className="w-4 h-4" style={{ color: appTheme.copper, marginTop: '0.15rem' }} />
+                  <div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 600, color: appTheme.espresso }}>{service.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: appTheme.espressoSoft }}>{service.url}</div>
+                  </div>
+                </div>
+                <Badge tone={service.status ? 'success' : 'danger'}>{service.status ? 'Healthy' : 'Down'}</Badge>
+              </div>
+            ))}
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard title="Tech stack" icon={Database}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem' }}>
+            {['Vapi', 'Qdrant', 'GPT-4o', 'FastAPI', 'ElevenLabs', 'Deepgram', 'HuggingFace', 'React', 'Vercel', 'Python'].map((tech) => (
+              <Badge key={tech}>{tech}</Badge>
+            ))}
+          </div>
+          <div style={{ marginTop: '1rem', fontSize: '0.85rem', lineHeight: 1.65, color: appTheme.espressoSoft }}>
+            The frontend, report memory, and doctor-facing tools now share the same warm visual system for a more consistent demo story.
+          </div>
+        </SurfaceCard>
+      </div>
+    </AppPage>
   )
 }

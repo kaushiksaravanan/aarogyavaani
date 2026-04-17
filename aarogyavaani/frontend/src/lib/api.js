@@ -13,6 +13,17 @@ export async function healthCheck() {
   }
 }
 
+export async function getQdrantStats() {
+  try {
+    const res = await fetch(`${BASE}/qdrant_stats`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Qdrant stats failed:', err)
+    return { status: 'error', knowledge_chunks: 0, memory_chunks: 0 }
+  }
+}
+
 export async function queryKnowledge(userId, query, language = 'auto') {
   try {
     const res = await fetch(`${BASE}/query_health_knowledge`, {
@@ -74,6 +85,17 @@ export async function getMedicalReports(userId) {
   }
 }
 
+export async function getMedicalReportChunks(userId, reportId) {
+  try {
+    const res = await fetch(`${BASE}/medical_reports/${encodeURIComponent(userId)}/${encodeURIComponent(reportId)}/chunks`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Report chunks fetch failed:', err)
+    return { status: 'error', chunks: [], total: 0 }
+  }
+}
+
 export async function getDoctorBrief(userId, language = 'en') {
   try {
     const res = await fetch(`${BASE}/doctor_brief`, {
@@ -108,6 +130,28 @@ export async function getHealthReport(userId) {
   } catch (err) {
     console.error('Health report fetch failed:', err)
     return { status: 'error', error: err.message }
+  }
+}
+
+export async function browseKnowledgeBase(offset = 0, limit = 20) {
+  try {
+    const res = await fetch(`${BASE}/knowledge_base/browse?offset=${offset}&limit=${limit}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Knowledge base browse failed:', err)
+    return { status: 'error', chunks: [], total: 0 }
+  }
+}
+
+export async function browseUserMemory(userId, limit = 50) {
+  try {
+    const res = await fetch(`${BASE}/user_memory/browse/${encodeURIComponent(userId)}?limit=${limit}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('User memory browse failed:', err)
+    return { status: 'error', chunks: [], total: 0 }
   }
 }
 

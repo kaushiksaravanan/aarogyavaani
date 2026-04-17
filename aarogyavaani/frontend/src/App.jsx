@@ -1,14 +1,23 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
-import CallPage from './pages/CallPage'
-import DashboardPage from './pages/DashboardPage'
-import HistoryPage from './pages/HistoryPage'
-import ProfilePage from './pages/ProfilePage'
-import BlogPage from './pages/BlogPage'
-import BlogPostPage from './pages/BlogPostPage'
 import Layout from './components/Layout'
 import PageTransition from './components/PageTransition'
+import OnboardingPopup from './components/OnboardingPopup'
 import { Link } from 'react-router-dom'
+
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const CallPage = lazy(() => import('./pages/CallPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const BlogPage = lazy(() => import('./pages/BlogPage'))
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
+const DoctorBriefPage = lazy(() => import('./pages/DoctorBriefPage'))
+const MedicationsPage = lazy(() => import('./pages/MedicationsPage'))
+const ReportComparePage = lazy(() => import('./pages/ReportComparePage'))
+const FamilyPage = lazy(() => import('./pages/FamilyPage'))
+const TasksPage = lazy(() => import('./pages/TasksPage'))
+const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'))
 
 function NotFound() {
   return (
@@ -33,7 +42,10 @@ function NotFound() {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <OnboardingPopup />
+      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#fffdf9', color: 'hsl(45 21% 40%)' }}>Loading...</div>}>
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
@@ -42,8 +54,16 @@ export default function App() {
         <Route path="/dashboard" element={<PageTransition><DashboardPage /></PageTransition>} />
         <Route path="/history" element={<PageTransition><HistoryPage /></PageTransition>} />
         <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
+        <Route path="/doctor-brief" element={<PageTransition><DoctorBriefPage /></PageTransition>} />
+        <Route path="/medications" element={<PageTransition><MedicationsPage /></PageTransition>} />
+        <Route path="/compare" element={<PageTransition><ReportComparePage /></PageTransition>} />
+        <Route path="/family" element={<PageTransition><FamilyPage /></PageTransition>} />
+        <Route path="/tasks" element={<PageTransition><TasksPage /></PageTransition>} />
+        <Route path="/knowledge" element={<PageTransition><KnowledgeBasePage /></PageTransition>} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
+      </Suspense>
+    </>
   )
 }
