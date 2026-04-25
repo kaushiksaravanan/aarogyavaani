@@ -24,6 +24,12 @@ export function getProfileBase() {
 }
 
 export function getStoredUserId() {
+  // Allow URL override for demo/testing: ?userId=xxx
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const urlUserId = params.get('userId')
+    if (urlUserId) return urlUserId
+  } catch {}
   const base = getProfileBase()
   return base.userId || localStorage.getItem('aarogyavaani_user_id') || ''
 }
