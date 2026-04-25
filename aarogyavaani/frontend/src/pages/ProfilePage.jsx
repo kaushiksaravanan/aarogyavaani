@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Save, Plus, X, Heart, Check } from 'lucide-react'
+import { User, Save, Plus, X, Heart, Check, Phone } from 'lucide-react'
 import { AppPage, PageHeader, SurfaceCard, PrimaryButton, SecondaryButton, TextInput, SelectInput, Badge, StatusBanner, appTheme } from '../components/AppPrimitives'
+import { loadStoredProfile, saveStoredProfile } from '../lib/profileStore'
 
 const CONDITIONS = [
   'Diabetes', 'Hypertension', 'Pregnancy', 'Heart Disease', 'Asthma',
@@ -11,8 +12,6 @@ const RELATIONSHIPS = [
   'Spouse', 'Parent', 'Child', 'Sibling', 'Grandparent', 'Grandchild', 'Other',
 ]
 
-const STORAGE_KEY = 'aarogyavaani_profile'
-
 const defaultProfile = {
   userId: `user_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`,
   name: '',
@@ -21,22 +20,30 @@ const defaultProfile = {
   language: 'hi',
   conditions: [],
   familyMembers: [],
+  emergencyContacts: [],
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-      const merged = { ...defaultProfile, ...stored }
-      if (!merged.userId) merged.userId = `user_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`
-      return merged
-    } catch {
-      return { ...defaultProfile }
-    }
-  })
+  const [profile, setProfile] = useState({ ...defaultProfile })
   const [toast, setToast] = useState(false)
   const [newMember, setNewMember] = useState({ name: '', relationship: '', age: '' })
+  const [newContact, setNewContact] = useState({ name: '', phone: '', type: 'doctor', specialization: '' })
   const toastTimeout = useRef(null)
+
+  useEffect(() => {
+    let mounted = true
+    loadStoredProfile()
+      .then((stored) => {
+        if (!mounted) return
+        const merged = { ...defaultProfile, ...stored }
+        if (!merged.userId) merged.userId = `user_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`
+        setProfile(merged)
+      })
+      .catch(() => {})
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const update = (key, val) => setProfile((p) => ({ ...p, [key]: val }))
 
@@ -62,14 +69,23 @@ export default function ProfilePage() {
     setNewMember({ name: '', relationship: '', age: '' })
   }
 
+  const addEmergencyContact = () => {
+    if (!newContact.name.trim() || !newContact.phone.trim()) return
+    setProfile((p) => ({
+      ...p,
+      emergencyContacts: [...(p.emergencyContacts || []), { ...newContact, id: Date.now() }],
+    }))
+    setNewContact({ name: '', phone: '', type: 'doctor', specialization: '' })
+  }
+
   const removeMember = (id) => {
     setProfile((p) => ({ ...p, familyMembers: p.familyMembers.filter((m) => m.id !== id) }))
   }
 
-  const save = () => {
+  const save = async () => {
     const toSave = profile.userId ? profile : { ...profile, userId: `user_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}` }
-    setProfile(toSave)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+    const saved = await saveStoredProfile(toSave)
+    setProfile(saved)
     if (toastTimeout.current) clearTimeout(toastTimeout.current)
     setToast(true)
     toastTimeout.current = setTimeout(() => setToast(false), 3000)
@@ -77,12 +93,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (profile.userId) {
-      try {
-        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-        if (!stored.userId) localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, userId: profile.userId }))
-      } catch {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ userId: profile.userId }))
-      }
+      localStorage.setItem('aarogyavaani_user_id', profile.userId)
     }
 
     return () => {
@@ -191,8 +202,46 @@ export default function ProfilePage() {
           </div>
         </SurfaceCard>
 
+        <SurfaceCard title="Emergency contacts" icon={Phone}>
+          <div style={{ fontSize: '0.82rem', color: appTheme.espressoSoft, marginBottom: '0.9rem' }}>
+            Add your doctor or support contacts. AarogyaVaani can call them during health emergencies with your permission.
+          </div>
+
+          {profile.emergencyContacts?.length > 0 ? (
+            <div style={{ display: 'grid', gap: '0.55rem', marginBottom: '1rem' }}>
+              {profile.emergencyContacts.map((contact) => (
+                <div key={contact.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.8rem', alignItems: 'center', padding: '0.8rem 0.9rem', borderRadius: '0.9rem', background: contact.type === 'doctor' ? 'rgba(37,99,235,0.04)' : 'rgba(34,22,14,0.03)', border: `1px solid ${appTheme.border}` }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: appTheme.espresso }}>{contact.name}</div>
+                      <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.5rem', borderRadius: '1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', background: contact.type === 'doctor' ? 'rgba(37,99,235,0.1)' : 'rgba(198,117,12,0.1)', color: contact.type === 'doctor' ? '#2563eb' : appTheme.copperStrong }}>{contact.type}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: appTheme.espressoSoft }}>{contact.phone}{contact.specialization ? ` · ${contact.specialization}` : ''}</div>
+                  </div>
+                  <SecondaryButton onClick={() => setProfile(p => ({ ...p, emergencyContacts: p.emergencyContacts.filter(c => c.id !== contact.id) }))}><X className="w-4 h-4" />Remove</SecondaryButton>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="grid sm:grid-cols-[1fr_1fr_1fr_auto_auto] gap-3 items-end">
+            <TextInput label="Contact name" value={newContact.name} onChange={(e) => setNewContact(p => ({ ...p, name: e.target.value }))} placeholder="Dr. Sharma" />
+            <TextInput label="Phone number" value={newContact.phone} onChange={(e) => setNewContact(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 43210" />
+            <SelectInput label="Type" value={newContact.type} onChange={(e) => setNewContact(p => ({ ...p, type: e.target.value }))}>
+              <option value="doctor">Doctor</option>
+              <option value="support">Support</option>
+            </SelectInput>
+            <TextInput label="Specialization" value={newContact.specialization} onChange={(e) => setNewContact(p => ({ ...p, specialization: e.target.value }))} placeholder="e.g. Cardiologist" />
+            <PrimaryButton onClick={addEmergencyContact} style={{ justifyContent: 'center', minHeight: '3rem' }}><Plus className="w-4 h-4" />Add</PrimaryButton>
+          </div>
+        </SurfaceCard>
+
         <div>
           <PrimaryButton onClick={save}><Save className="w-4 h-4" />Save profile</PrimaryButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: '2rem', background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.12)', width: 'fit-content' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span style={{ fontSize: '0.68rem', fontWeight: 500, color: '#4ade80' }}>Health data encrypted on your device · AES-256</span>
+          </div>
         </div>
       </div>
     </AppPage>

@@ -169,3 +169,225 @@ export async function generateTasks(summary, userId = 'anonymous') {
     return { status: 'error', tasks: [] }
   }
 }
+
+export async function assessEmergency(userId, symptomKeyword, transcriptText = '') {
+  try {
+    const res = await fetch(`${BASE}/assess_emergency`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        symptom_keyword: symptomKeyword,
+        transcript_text: transcriptText,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Emergency assessment failed:', err)
+    return {
+      status: 'error',
+      assessment: {
+        severity: 'medium',
+        is_recurring: false,
+        recommended_action: 'call_doctor',
+        message_to_patient: 'I\'m checking your situation. Would you like to speak with your doctor?',
+        message_to_doctor: `Patient reports ${symptomKeyword}.`,
+        reasoning: `Assessment error: ${err.message}`,
+      },
+    }
+  }
+}
+
+export async function initiateEmergencyCall({ userId, contactType, contactPhone, contactName, symptomSummary, severity, patientName }) {
+  try {
+    const res = await fetch(`${BASE}/initiate_emergency_call`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        contact_type: contactType,
+        contact_phone: contactPhone || '',
+        contact_name: contactName || '',
+        symptom_summary: symptomSummary || '',
+        severity: severity || 'medium',
+        patient_name: patientName || '',
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Emergency call initiation failed:', err)
+    return { status: 'error', error: err.message }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Agentic AI API Functions
+// ---------------------------------------------------------------------------
+
+export async function agentChat({ userId, message, conversationId = '', agentRole = 'auto', language = 'auto' }) {
+  try {
+    const res = await fetch(`${BASE}/agent/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        message,
+        conversation_id: conversationId,
+        language,
+        agent_role: agentRole,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Agent chat failed:', err)
+    return {
+      status: 'error',
+      response: 'Unable to reach the agent. Please try again.',
+      conversation_id: conversationId,
+      agents_used: [],
+      tools_used: [],
+      steps: [],
+      total_steps: 0,
+    }
+  }
+}
+
+export async function runProactiveCheck(userId) {
+  try {
+    const res = await fetch(`${BASE}/agent/proactive_check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Proactive check failed:', err)
+    return {
+      status: 'error',
+      user_id: userId,
+      alerts: [{ message: 'Could not run proactive check. Please try again.', priority: 'low', category: 'important' }],
+      analysis: '',
+      agents_used: [],
+      tools_used: [],
+    }
+  }
+}
+
+export async function runWorkflow({ userId, workflowType, params = {} }) {
+  try {
+    const res = await fetch(`${BASE}/agent/workflow`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        workflow_type: workflowType,
+        params,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Workflow execution failed:', err)
+    return {
+      status: 'error',
+      user_id: userId,
+      workflow_type: workflowType,
+      result: 'Workflow could not be executed. Please try again.',
+      agents_used: [],
+      tools_used: [],
+      steps: [],
+    }
+  }
+}
+
+export async function getAgentCapabilities() {
+  try {
+    const res = await fetch(`${BASE}/agent/capabilities`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Agent capabilities fetch failed:', err)
+    return { agents: [], workflows: [], tools_count: 0 }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// USP Feature APIs — Scheme Matcher, Smart Scan, Family Context, Proactive
+// ---------------------------------------------------------------------------
+
+export async function matchSchemes({ userId, state = '', conditions = [], income = '', age = '', gender = '' }) {
+  try {
+    const res = await fetch(`${BASE}/schemes/match`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, state, conditions, income, age, gender }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Scheme matching failed:', err)
+    return { status: 'error', error: err.message, matches: [], total_schemes_checked: 0 }
+  }
+}
+
+export async function smartScan({ userId, imageBase64, mimeType = 'image/jpeg', scanType = 'auto', language = 'auto' }) {
+  try {
+    const res = await fetch(`${BASE}/smart_scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        image_base64: imageBase64,
+        mime_type: mimeType,
+        scan_type: scanType,
+        language,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Smart scan failed:', err)
+    return { status: 'error', error: err.message }
+  }
+}
+
+export async function detectFamilyContext({ userId, message }) {
+  try {
+    const res = await fetch(`${BASE}/family/detect_context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, message }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Family context detection failed:', err)
+    return { status: 'error', is_family_query: false }
+  }
+}
+
+export async function getProactiveIntelligence(userId) {
+  try {
+    const res = await fetch(`${BASE}/proactive/intelligence`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Proactive intelligence failed:', err)
+    return {
+      status: 'error',
+      error: err.message,
+      seasonal_risks: [],
+      medication_gaps: [],
+      overdue_tests: [],
+      wellness_score: null,
+    }
+  }
+}

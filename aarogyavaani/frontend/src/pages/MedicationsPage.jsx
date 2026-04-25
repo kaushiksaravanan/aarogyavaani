@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Sunrise, Sun, Moon, Pill, AlertTriangle, Loader2, RefreshCw, Clock, Info } from 'lucide-react'
 import { CONFIG } from '../lib/config'
 import { AppPage, PageHeader, SurfaceCard, PrimaryButton, EmptyState, StatusBanner, TextInput, Badge, appTheme } from '../components/AppPrimitives'
+import { getStoredUserId } from '../lib/profileStore'
 
 const TIME_SLOTS = [
   { key: 'morning', label: 'Morning', icon: Sunrise, tone: 'warning', time: '7:00 - 9:00 AM' },
@@ -23,7 +24,7 @@ function MedCard({ med, tone }) {
 }
 
 export default function MedicationsPage() {
-  const [userId, setUserId] = useState('demo-user')
+  const [userId, setUserId] = useState(() => getStoredUserId())
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

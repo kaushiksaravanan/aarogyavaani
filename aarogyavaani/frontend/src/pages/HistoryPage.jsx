@@ -2,14 +2,10 @@ import { useState, useEffect } from 'react'
 import { Clock, CheckCircle, Circle, Calendar, Download, Loader2, Heart, AlertTriangle, Share2, FileText, History } from 'lucide-react'
 import { CONFIG } from '../lib/config'
 import { AppPage, PageHeader, SurfaceCard, PrimaryButton, SecondaryButton, EmptyState, StatusBanner, Badge, appTheme } from '../components/AppPrimitives'
+import { getStoredUserId } from '../lib/profileStore'
 
 function getUserId() {
-  try {
-    const profile = JSON.parse(localStorage.getItem('aarogyavaani_profile') || '{}')
-    return profile.userId || profile.name || 'anonymous'
-  } catch {
-    return 'anonymous'
-  }
+  return getStoredUserId() || 'anonymous'
 }
 
 function formatTimestamp(ts) {

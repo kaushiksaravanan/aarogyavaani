@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, Download, AlertCircle, Pill, Activity, Clock, FileUp, Loader2, User, Stethoscope, Mail, Send, CheckCircle } from 'lucide-react'
 import { CONFIG } from '../lib/config'
 import { AppPage, PageHeader, SurfaceCard, PrimaryButton, SecondaryButton, EmptyState, TextInput, SelectInput, StatusBanner, Badge, appTheme } from '../components/AppPrimitives'
+import { getStoredUserId } from '../lib/profileStore'
 
 function downloadPDF(brief) {
   const html = `<!DOCTYPE html>
@@ -44,7 +45,7 @@ ${brief.uploaded_reports.length ? `<h2>Uploaded Reports</h2>${brief.uploaded_rep
 }
 
 export default function DoctorBriefPage() {
-  const [userId, setUserId] = useState('demo-user')
+  const [userId, setUserId] = useState(() => getStoredUserId())
   const [brief, setBrief] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

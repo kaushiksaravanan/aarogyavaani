@@ -3,6 +3,7 @@ import { GitCompareArrows, TrendingUp, TrendingDown, AlertTriangle, Plus, Minus,
 import { CONFIG } from '../lib/config'
 import { getMedicalReports } from '../lib/api'
 import { AppPage, PageHeader, SurfaceCard, PrimaryButton, EmptyState, StatusBanner, SelectInput, Badge, appTheme } from '../components/AppPrimitives'
+import { getStoredUserId } from '../lib/profileStore'
 
 function ChangeCard({ items, title, icon: Icon, tone = 'neutral' }) {
   if (!items || items.length === 0) return null
@@ -33,7 +34,7 @@ function ChangeCard({ items, title, icon: Icon, tone = 'neutral' }) {
 }
 
 export default function ReportComparePage() {
-  const userId = localStorage.getItem('aarogyavaani_user_id') || 'demo-user'
+  const userId = getStoredUserId()
   const [reports, setReports] = useState([])
   const [reportId1, setReportId1] = useState('')
   const [reportId2, setReportId2] = useState('')

@@ -20,7 +20,7 @@ const RELATION_TONES = {
 }
 
 export default function FamilyPage() {
-  const userId = localStorage.getItem('aarogyavaani_user_id') || 'demo-user'
+  const userId = (() => { try { const p = JSON.parse(localStorage.getItem('aarogyavaani_profile') || '{}'); return p.userId || localStorage.getItem('aarogyavaani_user_id') || '' } catch { return '' } })()
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)

@@ -2,14 +2,10 @@ import { useState, useEffect } from 'react'
 import { Database, BookOpen, Brain, Search, ChevronLeft, ChevronRight, User, Copy, Check } from 'lucide-react'
 import { browseKnowledgeBase, browseUserMemory } from '../lib/api'
 import { AppPage, PageHeader, SurfaceCard, SecondaryButton, Badge, EmptyState, TextInput, appTheme } from '../components/AppPrimitives'
+import { getStoredUserId } from '../lib/profileStore'
 
 function getUserId() {
-  try {
-    const profile = JSON.parse(localStorage.getItem('aarogyavaani_profile') || '{}')
-    return profile.userId || localStorage.getItem('aarogyavaani_user_id') || ''
-  } catch {
-    return ''
-  }
+  return getStoredUserId()
 }
 
 function getLanguageTone(lang) {

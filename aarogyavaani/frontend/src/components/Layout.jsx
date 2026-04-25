@@ -1,11 +1,16 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Phone, LayoutDashboard, Clock, User, Stethoscope, Pill, GitCompareArrows, Users, CheckSquare, Database, Copy, Check } from 'lucide-react'
+import { Phone, LayoutDashboard, Clock, User, Stethoscope, Pill, GitCompareArrows, Users, CheckSquare, Database, Copy, Check, Settings, Lock, Bot, Shield, ScanLine, Activity } from 'lucide-react'
 import { appTheme, Badge } from './AppPrimitives'
+import { getStoredUserId } from '../lib/profileStore'
 
 const navItems = [
   { path: '/call', label: 'Call', icon: Phone },
+  { path: '/agent', label: 'AI Agent', icon: Bot },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/scan', label: 'Smart Scan', icon: ScanLine },
+  { path: '/schemes', label: 'Schemes', icon: Shield },
+  { path: '/proactive', label: 'Health Intel', icon: Activity },
   { path: '/knowledge', label: 'Knowledge', icon: Database },
   { path: '/doctor-brief', label: 'Doctor Brief', icon: Stethoscope },
   { path: '/medications', label: 'Medications', icon: Pill },
@@ -14,6 +19,8 @@ const navItems = [
   { path: '/tasks', label: 'Tasks', icon: CheckSquare },
   { path: '/history', label: 'History', icon: Clock },
   { path: '/profile', label: 'Profile', icon: User },
+  { path: '/private-documents', label: 'Private Docs', icon: Lock },
+  { path: '/settings', label: 'Settings', icon: Settings },
 ]
 
 const DARK_ROUTES = ['/call']
@@ -25,12 +32,7 @@ export default function Layout() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    try {
-      const profile = JSON.parse(localStorage.getItem('aarogyavaani_profile') || '{}')
-      setUserId(profile.userId || localStorage.getItem('aarogyavaani_user_id') || '')
-    } catch {
-      setUserId('')
-    }
+    setUserId(getStoredUserId())
   }, [])
 
   const copyId = () => {

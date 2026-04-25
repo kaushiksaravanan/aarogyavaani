@@ -12,7 +12,7 @@ const CATEGORY_CONFIG = {
 }
 
 export default function TasksPage() {
-  const userId = localStorage.getItem('aarogyavaani_user_id') || 'demo-user'
+  const userId = (() => { try { const p = JSON.parse(localStorage.getItem('aarogyavaani_profile') || '{}'); return p.userId || localStorage.getItem('aarogyavaani_user_id') || '' } catch { return '' } })()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

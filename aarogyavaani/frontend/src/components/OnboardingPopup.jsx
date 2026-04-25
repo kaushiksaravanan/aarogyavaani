@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Heart, ArrowRight, Check, X, User, Globe, Stethoscope } from 'lucide-react'
+import { saveStoredProfile } from '../lib/profileStore'
 
 const STORAGE_KEY = 'aarogyavaani_profile'
 const ONBOARDING_KEY = 'aarogyavaani_onboarded'
@@ -69,7 +70,7 @@ export default function OnboardingPopup() {
     }
   }
 
-  const finish = () => {
+  const finish = async () => {
     const userId = 'user_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
     const profile = {
       userId,
@@ -79,9 +80,9 @@ export default function OnboardingPopup() {
       language,
       conditions,
       familyMembers: [],
+      emergencyContacts: [],
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
-    localStorage.setItem('aarogyavaani_user_id', userId)
+    await saveStoredProfile(profile)
     localStorage.setItem(ONBOARDING_KEY, 'true')
     setClosing(true)
     setTimeout(() => setShow(false), 400)

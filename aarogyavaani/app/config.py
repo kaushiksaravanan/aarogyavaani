@@ -40,5 +40,9 @@ PORT = int(os.getenv("PORT", "8000"))
 # --- Security ---
 VAPI_SECRET = os.getenv("VAPI_SECRET", "")
 
+# --- Google Gemini ---
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
 # --- Deployment ---
 SERVER_URL = os.getenv("SERVER_URL", f"http://localhost:{PORT}")

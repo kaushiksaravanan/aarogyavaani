@@ -20,3 +20,8 @@
 /aarogyavaani/.env
 /aarogyavaani/.env.local
 /aarogyavaani/__pycache__
+/SCRATCHPAD.md
+/demo-video/.env
+/demo-video/node_modules/
+/demo-video/out/
+/demo-video/*.png

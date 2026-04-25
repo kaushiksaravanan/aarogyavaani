@@ -18,6 +18,12 @@ const ReportComparePage = lazy(() => import('./pages/ReportComparePage'))
 const FamilyPage = lazy(() => import('./pages/FamilyPage'))
 const TasksPage = lazy(() => import('./pages/TasksPage'))
 const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const PrivateDocumentsPage = lazy(() => import('./pages/PrivateDocumentsPage'))
+const AgentChatPage = lazy(() => import('./pages/AgentChatPage'))
+const SchemeMatcherPage = lazy(() => import('./pages/SchemeMatcherPage'))
+const SmartScanPage = lazy(() => import('./pages/SmartScanPage'))
+const ProactiveHealthPage = lazy(() => import('./pages/ProactiveHealthPage'))
 
 function NotFound() {
   return (
@@ -51,6 +57,7 @@ export default function App() {
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route element={<Layout />}>
         <Route path="/call" element={<PageTransition><CallPage /></PageTransition>} />
+        <Route path="/agent" element={<PageTransition><AgentChatPage /></PageTransition>} />
         <Route path="/dashboard" element={<PageTransition><DashboardPage /></PageTransition>} />
         <Route path="/history" element={<PageTransition><HistoryPage /></PageTransition>} />
         <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
@@ -60,6 +67,11 @@ export default function App() {
         <Route path="/family" element={<PageTransition><FamilyPage /></PageTransition>} />
         <Route path="/tasks" element={<PageTransition><TasksPage /></PageTransition>} />
         <Route path="/knowledge" element={<PageTransition><KnowledgeBasePage /></PageTransition>} />
+        <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+        <Route path="/private-documents" element={<PageTransition><PrivateDocumentsPage /></PageTransition>} />
+        <Route path="/schemes" element={<PageTransition><SchemeMatcherPage /></PageTransition>} />
+        <Route path="/scan" element={<PageTransition><SmartScanPage /></PageTransition>} />
+        <Route path="/proactive" element={<PageTransition><ProactiveHealthPage /></PageTransition>} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

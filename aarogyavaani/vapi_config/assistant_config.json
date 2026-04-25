@@ -79,6 +79,84 @@
           "url": "YOUR_SERVER_URL/vapi/webhook",
           "timeoutSeconds": 20
         }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "assess_emergency",
+          "description": "Assess the severity of a health symptom using patient history. Call this when the caller mentions pain, breathing difficulty, chest pain, bleeding, or any potentially serious symptom. Returns severity level and recommended action.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "user_id": {
+                "type": "string",
+                "description": "The caller's phone number or unique identifier"
+              },
+              "symptom_keyword": {
+                "type": "string",
+                "description": "The main symptom or health concern mentioned"
+              },
+              "transcript_text": {
+                "type": "string",
+                "description": "Recent conversation context about the symptom"
+              }
+            },
+            "required": ["user_id", "symptom_keyword"]
+          }
+        },
+        "async": false,
+        "server": {
+          "url": "YOUR_SERVER_URL/vapi/webhook",
+          "timeoutSeconds": 25
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "get_medication_info",
+          "description": "Get the patient's current medication schedule and drug information. Call this when the caller asks about their medicines, dosages, when to take them, or drug interactions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "user_id": {
+                "type": "string",
+                "description": "The caller's phone number or unique identifier"
+              }
+            },
+            "required": ["user_id"]
+          }
+        },
+        "async": false,
+        "server": {
+          "url": "YOUR_SERVER_URL/vapi/webhook",
+          "timeoutSeconds": 25
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "generate_follow_up_tasks",
+          "description": "Generate health follow-up tasks from the current conversation. Call this toward the end of a call to create actionable next steps for the patient.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "user_id": {
+                "type": "string",
+                "description": "The caller's phone number or unique identifier"
+              },
+              "context": {
+                "type": "string",
+                "description": "Summary of what was discussed for task generation"
+              }
+            },
+            "required": ["user_id", "context"]
+          }
+        },
+        "async": false,
+        "server": {
+          "url": "YOUR_SERVER_URL/vapi/webhook",
+          "timeoutSeconds": 20
+        }
       }
     ]
   },
