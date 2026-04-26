@@ -10,7 +10,7 @@ import logging
 import os
 import re
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from typing import Optional
 from uuid import uuid4
@@ -26,12 +26,19 @@ from pypdf import PdfReader
 from app.config import (
     APP_SERVICE_NAME,
     APP_VERSION,
+    CORS_ALLOW_ORIGINS,
+    CRON_SECRET,
+    FRONTEND_BASE_URL,
+    FRONTEND_PREVIEW_ORIGIN_REGEX,
     GEMINI_API_KEY,
     GEMINI_MODEL,
     KNOWLEDGE_COLLECTION,
     MEMORY_COLLECTION,
     QDRANT_API_KEY,
     QDRANT_URL,
+    VAPI_API_KEY,
+    VAPI_ASSISTANT_ID,
+    VAPI_PHONE_NUMBER_ID,
     VAPI_SECRET,
     SERVER_URL,
 )
@@ -71,6 +78,12 @@ from app.models import (
     ProactiveAlert,
     ProactiveCheckResponse,
     ProactiveIntelligenceResponse,
+    ReminderActionResponse,
+    ReminderEntry,
+    ReminderListResponse,
+    ReminderProcessResponse,
+    ReminderScheduleRequest,
+    ReminderStatusUpdateRequest,
     ReferenceItem,
     SchemeMatch,
     SchemeMatchRequest,
@@ -141,6 +154,20 @@ def get_qdrant() -> QdrantClient:
             timeout=30,
         )
     return qdrant
+
+
+def _ensure_memory_indexes() -> None:
+    qdrant_client = get_qdrant()
+    for field_name in ("user_phone", "entry_type", "status", "report_id"):
+        try:
+            qdrant_client.create_payload_index(
+                collection_name=MEMORY_COLLECTION,
+                field_name=field_name,
+                field_schema=models.PayloadSchemaType.KEYWORD,
+                wait=True,
+            )
+        except Exception as exc:
+            logger.warning("Could not ensure payload index for %s: %s", field_name, exc)
 
 
 def _clean_text(text: str) -> str:
@@ -503,6 +530,261 @@ def _strip_code_fence(content: str) -> str:
     return value
 
 
+def _coerce_iso_datetime(value: str) -> str:
+    cleaned = _clean_text(value)
+    if not cleaned:
+        return ""
+    candidate = cleaned.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return ""
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).isoformat()
+
+
+def _schedule_from_due_suggestion(due_suggestion: str) -> str:
+    now = datetime.now(timezone.utc)
+    normalized = _clean_text(due_suggestion).casefold()
+    if not normalized:
+        return (now.replace(second=0, microsecond=0)).isoformat()
+
+    mapping = {
+        "today": 0,
+        "daily": 1,
+        "this week": 3,
+        "next week": 7,
+        "within 1 month": 30,
+        "this month": 30,
+        "as needed": 0,
+    }
+    days = mapping.get(normalized, 1)
+    scheduled = now.replace(second=0, microsecond=0)
+    if days == 0:
+        return scheduled.isoformat()
+    return (scheduled + timedelta(days=days)).isoformat()
+
+
+def _reminder_filter(user_id: str, statuses: Optional[list[str]] = None) -> models.Filter:
+    must = [
+        models.FieldCondition(
+            key="user_phone",
+            match=models.MatchValue(value=user_id),
+        ),
+        models.FieldCondition(
+            key="entry_type",
+            match=models.MatchValue(value="follow-up-reminder"),
+        ),
+    ]
+    if statuses:
+        must.append(
+            models.FieldCondition(
+                key="status",
+                match=models.MatchAny(any=statuses),
+            )
+        )
+    return models.Filter(must=must)
+
+
+def _memory_point_to_reminder_entry(point) -> ReminderEntry:
+    payload = point.payload or {}
+    return ReminderEntry(
+        reminder_id=str(payload.get("reminder_id", point.id)),
+        user_id=payload.get("user_phone", ""),
+        title=payload.get("title", "Follow-up reminder"),
+        description=payload.get("description", ""),
+        priority=payload.get("priority", "medium"),
+        category=payload.get("category", "follow-up"),
+        scheduled_for=payload.get("scheduled_for", ""),
+        due_suggestion=payload.get("due_suggestion", ""),
+        status=payload.get("status", "scheduled"),
+        reminder_type=payload.get("reminder_type", "reminder"),
+        delivery_mode=payload.get("delivery_mode", "in_app"),
+        source_summary=payload.get("source_summary", ""),
+        customer_number=payload.get("customer_number", ""),
+        created_at=payload.get("created_at", payload.get("saved_at", "")),
+        updated_at=payload.get("updated_at", payload.get("saved_at", "")),
+        last_triggered_at=payload.get("last_triggered_at", ""),
+        outbound_call_status=payload.get("outbound_call_status", ""),
+        note=payload.get("note", ""),
+    )
+
+
+def _list_reminder_points(
+    user_id: str,
+    statuses: Optional[list[str]] = None,
+    limit: int = 100,
+) -> list:
+    qdrant_client = get_qdrant()
+    results = qdrant_client.scroll(
+        collection_name=MEMORY_COLLECTION,
+        scroll_filter=_reminder_filter(user_id, statuses=statuses),
+        limit=limit,
+        with_payload=True,
+        with_vectors=False,
+    )
+    return results[0] if results else []
+
+
+def _list_reminders(
+    user_id: str,
+    statuses: Optional[list[str]] = None,
+    limit: int = 100,
+) -> list[ReminderEntry]:
+    reminders = [_memory_point_to_reminder_entry(point) for point in _list_reminder_points(user_id, statuses=statuses, limit=limit)]
+    reminders.sort(key=lambda item: item.scheduled_for or item.created_at or "")
+    return reminders
+
+
+async def _save_reminder(
+    req: ReminderScheduleRequest,
+    scheduled_for: str,
+) -> ReminderEntry:
+    now = datetime.now(timezone.utc).isoformat()
+    reminder_id = str(uuid4())
+    embed_text = " ".join(
+        part for part in [req.title, req.description, req.category, req.source_summary] if _clean_text(part)
+    )
+    vector = await _embed_passage(embed_text or req.title)
+    payload = {
+        "user_phone": req.user_id,
+        "entry_type": "follow-up-reminder",
+        "reminder_id": reminder_id,
+        "title": req.title,
+        "description": req.description,
+        "priority": req.priority,
+        "category": req.category,
+        "scheduled_for": scheduled_for,
+        "due_suggestion": req.due_suggestion,
+        "source_summary": req.source_summary,
+        "status": "scheduled",
+        "reminder_type": req.reminder_type,
+        "delivery_mode": req.delivery_mode,
+        "customer_number": req.customer_number,
+        "timestamp": now,
+        "created_at": now,
+        "updated_at": now,
+        "saved_at": now,
+    }
+    get_qdrant().upsert(
+        collection_name=MEMORY_COLLECTION,
+        points=[
+            models.PointStruct(
+                id=reminder_id,
+                vector=vector,
+                payload=payload,
+            )
+        ],
+    )
+    return ReminderEntry(
+        reminder_id=reminder_id,
+        user_id=req.user_id,
+        title=req.title,
+        description=req.description,
+        priority=req.priority,
+        category=req.category,
+        scheduled_for=scheduled_for,
+        due_suggestion=req.due_suggestion,
+        status="scheduled",
+        reminder_type=req.reminder_type,
+        delivery_mode=req.delivery_mode,
+        source_summary=req.source_summary,
+        customer_number=req.customer_number,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+def _get_reminder_point(reminder_id: str, user_id: str):
+    points = get_qdrant().retrieve(
+        collection_name=MEMORY_COLLECTION,
+        ids=[reminder_id],
+        with_payload=True,
+        with_vectors=False,
+    )
+    if not points:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    point = points[0]
+    payload = point.payload or {}
+    if payload.get("user_phone") != user_id or payload.get("entry_type") != "follow-up-reminder":
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    return point
+
+
+def _update_reminder_payload(reminder_id: str, user_id: str, patch: dict) -> ReminderEntry:
+    point = _get_reminder_point(reminder_id, user_id)
+    payload = point.payload or {}
+    next_payload = {
+        **payload,
+        **patch,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    get_qdrant().overwrite_payload(
+        collection_name=MEMORY_COLLECTION,
+        payload=next_payload,
+        points=[reminder_id],
+    )
+    point.payload = next_payload
+    return _memory_point_to_reminder_entry(point)
+
+
+async def _trigger_vapi_outbound_call(reminder: ReminderEntry) -> dict:
+    if not VAPI_API_KEY or not VAPI_ASSISTANT_ID or not VAPI_PHONE_NUMBER_ID:
+        return {
+            "status": "skipped",
+            "reason": "missing_vapi_configuration",
+        }
+    if not reminder.customer_number:
+        return {
+            "status": "skipped",
+            "reason": "missing_customer_number",
+        }
+
+    client = get_http_client()
+    payload = {
+        "assistantId": VAPI_ASSISTANT_ID,
+        "phoneNumberId": VAPI_PHONE_NUMBER_ID,
+        "customer": {"number": reminder.customer_number},
+        "assistantOverrides": {
+            "variableValues": {
+                "user_id": reminder.user_id,
+                "reminder_title": reminder.title,
+                "reminder_category": reminder.category,
+            },
+            "metadata": {
+                "user_id": reminder.user_id,
+                "reminder_id": reminder.reminder_id,
+            },
+            "firstMessage": (
+                f"Hello. This is your scheduled AarogyaVaani follow-up call about {reminder.title}. "
+                "Please tell me how you are feeling today."
+            ),
+        },
+    }
+    response = await client.post(
+        "https://api.vapi.ai/call",
+        headers={
+            "Authorization": f"Bearer {VAPI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+    )
+    if response.status_code >= 300:
+        return {
+            "status": "error",
+            "reason": response.text[:280],
+        }
+    try:
+        data = response.json()
+    except ValueError:
+        data = {}
+    return {
+        "status": "placed",
+        "call_id": data.get("id", ""),
+    }
+
+
 async def _analyze_image_upload(
     file_name: str, mime_type: str, content_base64: str
 ) -> dict:
@@ -607,6 +889,7 @@ async def lifespan(app: FastAPI):
     logger.info("Pre-warming clients...")
     get_http_client()
     get_qdrant()
+    _ensure_memory_indexes()
     logger.info("Clients ready.")
 
     yield  # app runs here
@@ -629,14 +912,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://aarogyavaani-app.vercel.app",
-        "https://aarogyavaani-app-kaushiks-projects-ef17dfbd.vercel.app",
+configured_cors_origins = _unique_strings(
+    [
+        FRONTEND_BASE_URL,
+        *[item.strip() for item in (CORS_ALLOW_ORIGINS or "").split(",") if item.strip()],
         "http://localhost:3000",
         "http://localhost:5173",
-    ],
+    ]
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=configured_cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=[
@@ -645,8 +932,8 @@ app.add_middleware(
         "X-Requested-With",
         "x-vapi-secret",
     ],
-    # Only allow aarogyavaani preview deployments
-    allow_origin_regex=r"https://aarogyavaani-app(-[a-z0-9]+)?\.vercel\.app",
+    # Only allow configured aarogyavaani preview deployments.
+    allow_origin_regex=FRONTEND_PREVIEW_ORIGIN_REGEX or None,
 )
 
 
@@ -840,8 +1127,247 @@ def _memory_point_to_report_entry(point) -> MedicalReportEntry:
 
 
 def _is_call_memory_payload(payload: dict) -> bool:
-    entry_type = payload.get("entry_type", "call-summary")
-    return entry_type in {"call-summary", "conversation-summary", ""}
+    entry_type = payload.get("entry_type")
+    if entry_type:
+        return entry_type in {"call-summary", "conversation-summary"}
+    if payload.get("type") == "emergency_call_log":
+        return False
+    return bool(payload.get("summary") or payload.get("history_summary"))
+
+
+def _normalize_task_priority(value: str) -> str:
+    normalized = _clean_text(value).casefold()
+    return normalized if normalized in {"high", "medium", "low"} else "medium"
+
+
+def _normalize_follow_up_category(value: str) -> str:
+    normalized = _clean_text(value).casefold()
+    mapping = {
+        "appointment": "appointment",
+        "checkup": "appointment",
+        "check-up": "appointment",
+        "doctor": "appointment",
+        "exercise": "lifestyle",
+        "follow-up": "follow-up",
+        "followup": "follow-up",
+        "lifestyle": "lifestyle",
+        "medication": "medication",
+        "medicine": "medication",
+        "scheme": "follow-up",
+        "test": "test",
+        "lab": "test",
+        "scan": "test",
+        "diet": "lifestyle",
+    }
+    return mapping.get(normalized, "follow-up")
+
+
+def _normalize_health_tasks(raw_payload) -> list[HealthTask]:
+    items = raw_payload.get("tasks", []) if isinstance(raw_payload, dict) else raw_payload
+    if not isinstance(items, list):
+        raise ValueError("Task payload must be a list")
+
+    tasks: list[HealthTask] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        task_text = _clean_text(
+            item.get("task") or item.get("title") or item.get("description", "")
+        )
+        if not task_text:
+            continue
+        tasks.append(
+            HealthTask(
+                task=task_text,
+                priority=_normalize_task_priority(item.get("priority", "medium")),
+                due_suggestion=_clean_text(
+                    item.get("due_suggestion") or item.get("due", "")
+                ),
+                category=_clean_text(item.get("category", "follow-up"))
+                or "follow-up",
+            )
+        )
+    return tasks
+
+
+def _fallback_health_tasks(summary: str) -> list[HealthTask]:
+    text = _clean_text(summary)
+    lowered = text.casefold()
+    tasks: list[HealthTask] = []
+
+    if any(
+        token in lowered
+        for token in (
+            "medicine",
+            "medication",
+            "tablet",
+            "dose",
+            "insulin",
+            "blood pressure",
+            "bp",
+            "sugar",
+            "diabetes",
+            "hypertension",
+        )
+    ):
+        tasks.append(
+            HealthTask(
+                task="Take medicines on time and note any missed doses or side effects.",
+                priority="high"
+                if any(
+                    token in lowered
+                    for token in ("insulin", "blood pressure", "bp", "sugar")
+                )
+                else "medium",
+                due_suggestion="daily",
+                category="medication",
+            )
+        )
+
+    if any(
+        token in lowered
+        for token in ("report", "test", "scan", "lab", "reading", "blood pressure", "sugar")
+    ):
+        tasks.append(
+            HealthTask(
+                task="Review your latest readings or report and share any changes this week.",
+                priority="medium",
+                due_suggestion="this week",
+                category="test",
+            )
+        )
+
+    if any(
+        token in lowered
+        for token in (
+            "doctor",
+            "appointment",
+            "clinic",
+            "follow-up",
+            "pain",
+            "fever",
+            "breathing",
+            "symptom",
+            "worse",
+            "worsen",
+            "persistent",
+        )
+    ):
+        tasks.append(
+            HealthTask(
+                task="Arrange a doctor follow-up if symptoms continue, worsen, or new symptoms appear.",
+                priority="high"
+                if any(
+                    token in lowered
+                    for token in ("pain", "breathing", "worse", "worsen", "persistent")
+                )
+                else "medium",
+                due_suggestion="this week",
+                category="appointment",
+            )
+        )
+
+    tasks.append(
+        HealthTask(
+            task="Keep recent prescriptions and reports ready for your next health conversation.",
+            priority="low",
+            due_suggestion="this week",
+            category="follow-up",
+        )
+    )
+
+    deduped: list[HealthTask] = []
+    seen: set[str] = set()
+    for task in tasks:
+        key = task.task.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(task)
+    return deduped[:4]
+
+
+def _health_task_to_follow_up_task(task: HealthTask) -> dict:
+    category = _normalize_follow_up_category(task.category)
+    description_map = {
+        "appointment": "Speak with a doctor or health worker after you complete this step, especially if symptoms persist.",
+        "lifestyle": "Track how this habit affects your health over the next few days and mention it in your next check-in.",
+        "medication": "Keep note of any missed doses, medicine stock issues, or side effects before the next follow-up.",
+        "test": "Keep the latest readings or report ready so AarogyaVaani can compare what changed.",
+        "follow-up": "Share an update with AarogyaVaani once this step is done or if the situation changes.",
+    }
+    return {
+        "title": task.task,
+        "description": description_map.get(category, task.task),
+        "priority": task.priority,
+        "category": category,
+        "due": task.due_suggestion or "this week",
+    }
+
+
+def _normalize_follow_up_tasks(raw_payload) -> list[dict]:
+    items = raw_payload.get("tasks", []) if isinstance(raw_payload, dict) else raw_payload
+    if not isinstance(items, list):
+        raise ValueError("Follow-up task payload must be a list")
+
+    tasks: list[dict] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        title = _clean_text(
+            item.get("title") or item.get("task") or item.get("description", "")
+        )
+        if not title:
+            continue
+        tasks.append(
+            {
+                "title": title,
+                "description": _clean_text(item.get("description") or title),
+                "priority": _normalize_task_priority(item.get("priority", "medium")),
+                "category": _normalize_follow_up_category(
+                    item.get("category", "follow-up")
+                ),
+                "due": _clean_text(
+                    item.get("due") or item.get("due_suggestion", "this week")
+                )
+                or "this week",
+            }
+        )
+    return tasks
+
+
+def _fallback_follow_up_tasks(summary: str) -> list[dict]:
+    return [
+        _health_task_to_follow_up_task(task)
+        for task in _fallback_health_tasks(summary)
+    ]
+
+
+def _safe_float(value, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _extract_vapi_user_id(message: dict) -> str:
+    call = message.get("call", {}) or {}
+    assistant_overrides = call.get("assistantOverrides", {}) or {}
+    variable_values = assistant_overrides.get("variableValues", {}) or {}
+    metadata = call.get("metadata", {}) or {}
+    customer = call.get("customer", {}) or {}
+
+    candidates = [
+        customer.get("number", ""),
+        metadata.get("user_id", ""),
+        variable_values.get("user_id", ""),
+        call.get("phoneNumber", ""),
+    ]
+    for candidate in candidates:
+        value = _clean_text(candidate)
+        if value and value.lower() != "unknown":
+            return value
+    return ""
 
 
 def _verify_user_access(user_id: str, auth_token: Optional[str]) -> None:
@@ -1011,6 +1537,12 @@ async def debug_env():
         "gemini_model": GEMINI_MODEL,
         "openrouter_key_set": bool(os.getenv("OPENROUTER_API_KEY")),
         "primary_llm": "gemini" if GEMINI_API_KEY else "openrouter",
+        "frontend_base_url": FRONTEND_BASE_URL,
+        "cors_allow_origins": configured_cors_origins,
+        "cron_secret_set": bool(CRON_SECRET),
+        "vapi_api_key_set": bool(VAPI_API_KEY),
+        "vapi_assistant_id_set": bool(VAPI_ASSISTANT_ID),
+        "vapi_phone_number_id_set": bool(VAPI_PHONE_NUMBER_ID),
         "vapi_secret_set": bool(VAPI_SECRET),
     }
 
@@ -1100,7 +1632,9 @@ async def save_conversation_summary(req: ConversationSummary):
     point_id = str(uuid4())
     payload = {
         "user_phone": req.user_id,
+        "entry_type": "conversation-summary",
         "summary": req.summary,
+        "history_summary": req.summary,
         "timestamp": req.timestamp,
         "language": req.language,
         "conditions": req.conditions,
@@ -1260,14 +1794,11 @@ async def vapi_webhook(payload: VapiMessage):
     # ----- end-of-call-report -----
     if msg_type == "end-of-call-report":
         try:
-            call = message.get("call", {})
-            user_id = call.get("customer", {}).get("number", "") or call.get(
-                "metadata", {}
-            ).get("user_id", "unknown")
+            user_id = _extract_vapi_user_id(message) or "unknown"
             summary = message.get("summary", message.get("transcript", ""))
             timestamp = message.get("endedAt", datetime.now(timezone.utc).isoformat())
 
-            if summary:
+            if summary and user_id != "unknown":
                 req = ConversationSummary(
                     user_id=user_id,
                     summary=summary,
@@ -1295,6 +1826,10 @@ async def vapi_webhook(payload: VapiMessage):
                     )
                 except Exception as wf_exc:
                     logger.warning("Post-call workflow failed (non-blocking): %s", wf_exc)
+            elif summary:
+                logger.warning(
+                    "Skipping end-of-call auto-save because user_id could not be resolved"
+                )
 
         except Exception as exc:
             logger.error("Failed to auto-save end-of-call summary: %s", exc)
@@ -1500,17 +2035,141 @@ JSON array:"""
             max_tokens=500,
         )
 
-        # Parse JSON from response (may have markdown fences)
-        if content.startswith("```"):
-            content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-
-        tasks_raw = _json.loads(content)
-        tasks = [HealthTask(**t) for t in tasks_raw]
+        tasks_raw = _json.loads(_strip_code_fence(content))
+        tasks = _normalize_health_tasks(tasks_raw)
+        if not tasks:
+            tasks = _fallback_health_tasks(req.summary)
         return TaskGenerationResponse(tasks=tasks)
     except Exception as exc:
         logger.error("Task generation failed: %s", exc, exc_info=True)
-        # Return empty tasks rather than error — graceful degradation
-        return TaskGenerationResponse(tasks=[], status="generation_failed")
+        return TaskGenerationResponse(
+            tasks=_fallback_health_tasks(req.summary),
+            status="fallback",
+        )
+
+
+@app.post("/reminders", response_model=ReminderActionResponse)
+async def schedule_reminder(
+    req: ReminderScheduleRequest,
+    x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
+):
+    _verify_user_access(req.user_id, x_auth_token)
+    logger.info(
+        "schedule_reminder | user=%s type=%s mode=%s",
+        req.user_id,
+        req.reminder_type,
+        req.delivery_mode,
+    )
+
+    scheduled_for = _coerce_iso_datetime(req.scheduled_for) or _schedule_from_due_suggestion(
+        req.due_suggestion
+    )
+    reminder = await _save_reminder(req, scheduled_for)
+    return ReminderActionResponse(reminder=reminder)
+
+
+@app.get("/reminders/{user_id}", response_model=ReminderListResponse)
+async def list_reminders(
+    user_id: str,
+    include_done: bool = Query(default=True),
+    x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
+):
+    _verify_user_access(user_id, x_auth_token)
+    statuses = None
+    if not include_done:
+        statuses = ["scheduled", "ringing", "acknowledged", "snoozed", "called"]
+    reminders = _list_reminders(user_id, statuses=statuses, limit=200)
+    return ReminderListResponse(user_id=user_id, reminders=reminders, total=len(reminders))
+
+
+@app.post("/reminders/{reminder_id}/status", response_model=ReminderActionResponse)
+async def update_reminder_status(
+    reminder_id: str,
+    req: ReminderStatusUpdateRequest,
+    x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
+):
+    _verify_user_access(req.user_id, x_auth_token)
+    patch = {
+        "status": req.status,
+        "note": req.note,
+    }
+    if req.scheduled_for:
+        patch["scheduled_for"] = _coerce_iso_datetime(req.scheduled_for) or req.scheduled_for
+    if req.status in {"ringing", "called", "acknowledged", "completed"}:
+        patch["last_triggered_at"] = datetime.now(timezone.utc).isoformat()
+    reminder = _update_reminder_payload(reminder_id, req.user_id, patch)
+    return ReminderActionResponse(reminder=reminder)
+
+
+async def _process_due_reminders(now: Optional[datetime] = None) -> ReminderProcessResponse:
+    current_time = now or datetime.now(timezone.utc)
+    results = get_qdrant().scroll(
+        collection_name=MEMORY_COLLECTION,
+        scroll_filter=models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="entry_type",
+                    match=models.MatchValue(value="follow-up-reminder"),
+                ),
+                models.FieldCondition(
+                    key="status",
+                    match=models.MatchAny(any=["scheduled", "snoozed"]),
+                ),
+            ]
+        ),
+        limit=200,
+        with_payload=True,
+        with_vectors=False,
+    )
+    points = results[0] if results else []
+    due_reminders: list[ReminderEntry] = []
+    outbound_triggered = 0
+    mock_due = 0
+
+    for point in points:
+        reminder = _memory_point_to_reminder_entry(point)
+        scheduled_for = _coerce_iso_datetime(reminder.scheduled_for)
+        if not scheduled_for:
+            continue
+        if datetime.fromisoformat(scheduled_for.replace("Z", "+00:00")) > current_time:
+            continue
+        if reminder.delivery_mode == "in_app":
+            continue
+
+        due_reminders.append(reminder)
+        next_status = "ringing" if reminder.delivery_mode == "mock_incoming" else "called"
+        patch = {
+            "status": next_status,
+            "last_triggered_at": current_time.isoformat(),
+        }
+
+        if reminder.delivery_mode == "vapi_outbound":
+            outbound_result = await _trigger_vapi_outbound_call(reminder)
+            patch["outbound_call_status"] = outbound_result.get("status", "")
+            patch["note"] = outbound_result.get("reason", "")
+            outbound_triggered += 1 if outbound_result.get("status") == "placed" else 0
+        else:
+            mock_due += 1
+
+        updated = _update_reminder_payload(reminder.reminder_id, reminder.user_id, patch)
+        due_reminders[-1] = updated
+
+    return ReminderProcessResponse(
+        processed=len(points),
+        due=len(due_reminders),
+        outbound_triggered=outbound_triggered,
+        mock_due=mock_due,
+        reminders=due_reminders,
+    )
+
+
+@app.post("/reminders/process_due", response_model=ReminderProcessResponse)
+async def process_due_reminders(authorization: Optional[str] = Header(None)):
+    if CRON_SECRET:
+        expected = f"Bearer {CRON_SECRET}"
+        if authorization != expected:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+    return await _process_due_reminders()
 
 
 @app.get("/call_history/{user_id}", response_model=CallHistoryResponse)
@@ -2371,19 +3030,33 @@ async def generate_follow_up_tasks(user_id: str):
         payload = point.payload or {}
         entry_type = payload.get("entry_type", "call-summary")
         if entry_type == "medical-report":
+            report_summary = payload.get("report_summary", payload.get("summary", ""))
+            if not report_summary:
+                continue
             context_parts.append(
-                f"Report: {payload.get('report_name', '')} - {payload.get('report_summary', '')[:200]}"
+                f"Report: {payload.get('report_name', '')} - {report_summary[:200]}"
             )
-            meds = payload.get("medicines", [])
+            meds = _unique_strings(payload.get("medicines", []))
             if meds:
                 context_parts.append(f"  Medicines: {', '.join(meds[:8])}")
-        else:
-            summary = payload.get("summary", "")
-            if summary:
-                context_parts.append(f"Call: {summary[:200]}")
-            conditions = payload.get("conditions", [])
-            if conditions:
-                context_parts.append(f"  Conditions: {', '.join(conditions[:5])}")
+            continue
+
+        if not _is_call_memory_payload(payload):
+            continue
+
+        summary = payload.get("history_summary", payload.get("summary", ""))
+        if summary:
+            context_parts.append(f"Call: {summary[:200]}")
+        conditions = _unique_strings(payload.get("conditions", []))
+        if conditions:
+            context_parts.append(f"  Conditions: {', '.join(conditions[:5])}")
+
+    if not context_parts:
+        return {
+            "user_id": user_id,
+            "tasks": [],
+            "message": "No recent conversation summaries found.",
+        }
 
     context_text = "\n".join(context_parts[-20:])  # last 20 entries
 
@@ -2414,22 +3087,25 @@ async def generate_follow_up_tasks(user_id: str):
         import re
 
         try:
-            result = json_mod.loads(llm_response.strip())
+            result = json_mod.loads(_strip_code_fence(llm_response))
         except json_mod.JSONDecodeError:
-            json_match = re.search(r"\{[\s\S]*\}", llm_response)
+            json_match = re.search(r"\{[\s\S]*\}|\[[\s\S]*\]", llm_response)
             if json_match:
                 result = json_mod.loads(json_match.group())
             else:
                 raise ValueError("Could not parse LLM response")
 
-        return {"user_id": user_id, "tasks": result.get("tasks", [])}
+        tasks = _normalize_follow_up_tasks(result)
+        if not tasks:
+            raise ValueError("No tasks returned")
+        return {"user_id": user_id, "tasks": tasks}
 
     except Exception as exc:
-        logger.error("Follow-up tasks LLM failed: %s", exc)
+        logger.error("Follow-up tasks LLM failed: %s", exc, exc_info=True)
         return {
             "user_id": user_id,
-            "tasks": [],
-            "message": "Could not generate tasks. Please try again.",
+            "tasks": _fallback_follow_up_tasks(context_text),
+            "message": "Showing simplified follow-up tasks while AI task generation recovers.",
         }
 
 
@@ -2797,9 +3473,6 @@ class EmergencyCallRequest(BaseModel):
     patient_name: str = ""
 
 
-SERVER_URL = os.getenv("SERVER_URL", "https://aarogyavaani-api.vercel.app")
-
-
 @app.post("/initiate_emergency_call")
 async def initiate_emergency_call(req: EmergencyCallRequest):
     """
@@ -2899,7 +3572,8 @@ async def initiate_emergency_call(req: EmergencyCallRequest):
                     id=str(uuid4()),
                     vector=vec,
                     payload={
-                        "user_id": req.user_id,
+                        "user_phone": req.user_id,
+                        "entry_type": "emergency-call-log",
                         "type": "emergency_call_log",
                         "text": call_log_text,
                         "contact_type": req.contact_type,
@@ -3100,7 +3774,10 @@ async def match_government_schemes(req: SchemeMatchRequest):
     except Exception:
         pass
 
-    patient_conditions = list(set(c.lower().strip() for c in patient_conditions if c.strip()))
+    patient_conditions = _unique_strings(
+        [c.lower().strip() for c in patient_conditions if isinstance(c, str) and c.strip()]
+    )
+    patient_medicines = _unique_strings(patient_medicines)
 
     # Pre-filter schemes based on conditions
     candidate_schemes = []
@@ -3134,7 +3811,7 @@ async def match_government_schemes(req: SchemeMatchRequest):
         f"Family size: {req.family_size}, BPL card: {'Yes' if req.has_bpl_card else 'No'}, "
         f"Pregnant: {'Yes' if req.is_pregnant else 'No'}, Disabled: {'Yes' if req.is_disabled else 'No'}, "
         f"Conditions: {', '.join(patient_conditions) or 'none reported'}, "
-        f"Medications: {', '.join(set(patient_medicines)[:10]) or 'none reported'}"
+        f"Medications: {', '.join(patient_medicines[:10]) or 'none reported'}"
     )
 
     try:
@@ -3188,7 +3865,7 @@ async def match_government_schemes(req: SchemeMatchRequest):
         matched_schemes.append(SchemeMatch(
             scheme_name=full_scheme["name"] if full_scheme else scheme_name,
             scheme_name_hindi=full_scheme.get("name_hi", "") if full_scheme else "",
-            eligibility_score=float(gm.get("eligibility_score", 0.5)),
+            eligibility_score=_safe_float(gm.get("eligibility_score", 0.5), 0.5),
             category=full_scheme.get("category", "central") if full_scheme else "central",
             coverage=gm.get("coverage_highlight", full_scheme.get("coverage", "") if full_scheme else ""),
             benefits=full_scheme.get("benefits", []) if full_scheme else [],
@@ -3199,15 +3876,51 @@ async def match_government_schemes(req: SchemeMatchRequest):
             why_eligible=gm.get("why_eligible", ""),
         ))
 
+    if not matched_schemes:
+        for scheme in candidate_schemes[:3]:
+            income_limit = int(scheme.get("income_limit", 0) or 0)
+            income_matches = income_limit == 0 or req.annual_income <= income_limit or req.has_bpl_card
+            condition_matches = "any" in scheme.get("conditions_relevant", []) or any(
+                relevant in condition or condition in relevant
+                for condition in patient_conditions
+                for relevant in scheme.get("conditions_relevant", [])
+            )
+            score = 0.8 if condition_matches else 0.65 if income_matches else 0.45
+            matched_schemes.append(
+                SchemeMatch(
+                    scheme_name=scheme["name"],
+                    scheme_name_hindi=scheme.get("name_hi", ""),
+                    eligibility_score=score,
+                    category=scheme.get("category", "central"),
+                    coverage=scheme.get("coverage", ""),
+                    benefits=scheme.get("benefits", []),
+                    how_to_apply=(
+                        "Visit your nearest government hospital, Ayushman desk, or Common Service Centre with "
+                        + ", ".join(scheme.get("documents", []))
+                        + "."
+                    ),
+                    documents_needed=scheme.get("documents", []),
+                    helpline=scheme.get("helpline", ""),
+                    website=scheme.get("website", ""),
+                    why_eligible=(
+                        "This scheme matches the health needs, income details, or public eligibility markers you provided."
+                    ),
+                )
+            )
+
     # Sort by eligibility score
     matched_schemes.sort(key=lambda s: s.eligibility_score, reverse=True)
 
     return SchemeMatchResponse(
         user_id=req.user_id,
         matched_schemes=matched_schemes,
-        total_potential_coverage=gemini_data.get("total_potential_coverage", ""),
-        patient_summary=gemini_data.get("patient_summary", ""),
-        gemini_analysis=gemini_data.get("top_recommendation", ""),
+        total_potential_coverage=gemini_data.get("total_potential_coverage") or "See scheme-wise benefits below.",
+        patient_summary=gemini_data.get("patient_summary") or (
+            f"{req.age or 'Adult'} year old patient from {req.state or 'India'} with {', '.join(patient_conditions[:3]) or 'general healthcare needs'}."
+        ),
+        gemini_analysis=gemini_data.get("top_recommendation") or (
+            "Start with the highest-scoring scheme below and keep the listed documents ready before visiting the help desk."
+        ),
         generated_at=datetime.now(timezone.utc).isoformat(),
     )
 

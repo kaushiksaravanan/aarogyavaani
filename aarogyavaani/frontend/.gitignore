@@ -1,1 +1,6 @@
 .vercel
+.env
+node_modules/
+dist/
+dev_output.txt
+nul

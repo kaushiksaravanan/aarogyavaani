@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { SignInButton, UserButton } from '@clerk/clerk-react'
 import { useAuthSafe, CLERK_AVAILABLE } from '../lib/useAuthSafe'
 import useScrollReveal from '../lib/useScrollReveal'
+import { CONFIG } from '../lib/config'
 
 /* ─── data ────────────────────────────────────────────────────────── */
 
@@ -644,6 +645,7 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const { isSignedIn } = useAuthSafe()
   useScrollReveal()
+  const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(`Just tried ${CONFIG.APP_NAME} — a voice AI that provides healthcare guidance in 30+ languages. Perfect for rural India! ${CONFIG.APP_X_HANDLE}`)}&url=${encodeURIComponent(CONFIG.APP_BASE_URL)}`
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -1256,7 +1258,7 @@ export default function LandingPage() {
               Tried AarogyaVaani? We'd love to hear from you! Share your experience on X and tag us.
             </p>
             <a
-              href="https://x.com/intent/tweet?text=Just%20tried%20AarogyaVaani%20%E2%80%94%20a%20voice%20AI%20that%20provides%20healthcare%20guidance%20in%2030%2B%20languages.%20Perfect%20for%20rural%20India!%20%F0%9F%87%AE%F0%9F%87%B3%20%40Kaushiks0&url=https%3A%2F%2Faarogyavaani-app.vercel.app"
+              href={shareUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{

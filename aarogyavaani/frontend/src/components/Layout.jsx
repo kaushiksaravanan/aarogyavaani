@@ -1,8 +1,10 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Phone, LayoutDashboard, Clock, User, Stethoscope, Pill, GitCompareArrows, Users, CheckSquare, Database, Copy, Check, Settings, Lock, Bot, Shield, ScanLine, Activity } from 'lucide-react'
+import { Phone, LayoutDashboard, Clock, User, Stethoscope, Pill, GitCompareArrows, Users, CheckSquare, Database, Copy, Check, Settings, Lock, Bot, Shield, ScanLine, Activity, BellRing, PhoneOff } from 'lucide-react'
 import { appTheme, Badge } from './AppPrimitives'
 import { getStoredUserId } from '../lib/profileStore'
+import { getReminders, updateReminderStatus } from '../lib/api'
+import { emitReminderChange, findFirstLocalReminder, getActiveIncomingReminder, loadLocalReminders, setActiveIncomingReminder, subscribeToReminderEvents, updateLocalReminder, upsertLocalReminder } from '../lib/reminderStore'
 
 const navItems = [
   { path: '/call', label: 'Call', icon: Phone },
@@ -27,13 +29,76 @@ const DARK_ROUTES = ['/call']
 
 export default function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const isDarkRoute = DARK_ROUTES.includes(location.pathname)
   const [userId, setUserId] = useState('')
   const [copied, setCopied] = useState(false)
+  const [incomingReminder, setIncomingReminder] = useState(null)
 
   useEffect(() => {
     setUserId(getStoredUserId())
   }, [])
+
+  useEffect(() => {
+    if (!userId) return undefined
+    let cancelled = false
+
+    async function syncReminders() {
+      const [serverReminders, localReminders, activeReminder] = await Promise.all([
+        getReminders(userId, false),
+        loadLocalReminders(userId),
+        getActiveIncomingReminder(userId),
+      ])
+
+      if (cancelled) return
+
+      const now = Date.now()
+      const merged = []
+      for (const reminder of localReminders) merged.push(reminder)
+      for (const reminder of serverReminders.reminders || []) {
+        merged.push(reminder)
+        await upsertLocalReminder(userId, reminder)
+      }
+
+      const dueLocalReminder = await findFirstLocalReminder(userId, reminder => {
+        if (reminder.status !== 'scheduled' || reminder.delivery_mode !== 'mock_incoming' || reminder.reminder_type !== 'call' || !reminder.scheduled_for) return false
+        const when = new Date(reminder.scheduled_for).getTime()
+        return Number.isFinite(when) && when <= now
+      })
+
+      if (dueLocalReminder) {
+        const ringingReminder = { ...dueLocalReminder, status: 'ringing', last_triggered_at: new Date().toISOString() }
+        await updateReminderStatus({ userId, reminderId: dueLocalReminder.reminder_id, status: 'ringing', note: 'Mock incoming call is ringing in the client' })
+        await updateLocalReminder(userId, dueLocalReminder.reminder_id, ringingReminder)
+        merged.push(ringingReminder)
+      }
+
+      const ringing = activeReminder
+        && activeReminder.status === 'ringing'
+        && activeReminder.reminder_type === 'call'
+        ? activeReminder
+        : merged.find(reminder => reminder.status === 'ringing' && reminder.delivery_mode === 'mock_incoming' && reminder.reminder_type === 'call')
+        || null
+      setIncomingReminder(ringing)
+      if (ringing) {
+        await setActiveIncomingReminder(userId, ringing)
+      }
+    }
+
+    syncReminders().catch(() => {})
+    const interval = window.setInterval(() => {
+      syncReminders().catch(() => {})
+    }, 15000)
+    const unsubscribe = subscribeToReminderEvents(() => {
+      syncReminders().catch(() => {})
+    })
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      unsubscribe()
+    }
+  }, [userId])
 
   const copyId = () => {
     if (!userId) return
@@ -44,6 +109,31 @@ export default function Layout() {
   }
 
   const shellBg = isDarkRoute ? '#120b07' : appTheme.surface
+
+  const handleAcceptIncomingCall = async () => {
+    if (!incomingReminder || !userId) return
+    const nextReminder = {
+      ...incomingReminder,
+      status: 'acknowledged',
+      note: 'User accepted incoming mock call',
+      updated_at: new Date().toISOString(),
+    }
+    await updateReminderStatus({ userId, reminderId: incomingReminder.reminder_id, status: 'acknowledged', note: 'User accepted incoming mock call' })
+    await updateLocalReminder(userId, incomingReminder.reminder_id, nextReminder)
+    await setActiveIncomingReminder(userId, nextReminder)
+    emitReminderChange()
+    setIncomingReminder(null)
+    navigate(`/call?incomingReminder=${encodeURIComponent(incomingReminder.reminder_id)}`)
+  }
+
+  const handleDismissIncomingCall = async () => {
+    if (!incomingReminder || !userId) return
+    await updateReminderStatus({ userId, reminderId: incomingReminder.reminder_id, status: 'dismissed', note: 'User dismissed incoming mock call' })
+    await updateLocalReminder(userId, incomingReminder.reminder_id, { status: 'dismissed', note: 'User dismissed incoming mock call' })
+    await setActiveIncomingReminder(userId, null)
+    emitReminderChange()
+    setIncomingReminder(null)
+  }
 
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden" style={{ background: shellBg }}>
@@ -206,6 +296,69 @@ export default function Layout() {
           })}
         </div>
       </nav>
+
+      {incomingReminder ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 120,
+            background: 'rgba(18, 11, 7, 0.76)',
+            backdropFilter: 'blur(10px)',
+            display: 'grid',
+            placeItems: 'center',
+            padding: '1.2rem',
+          }}
+        >
+          <div
+            style={{
+              width: 'min(100%, 28rem)',
+              borderRadius: '1.8rem',
+              padding: '1.3rem',
+              background: 'linear-gradient(180deg, #2a1b12, #1a120c)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
+              color: '#fff',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem' }}>
+              <div style={{ width: '3rem', height: '3rem', borderRadius: '999px', display: 'grid', placeItems: 'center', background: 'rgba(198,117,12,0.18)', border: '1px solid rgba(198,117,12,0.28)', animation: 'warmPulse 1.8s cubic-bezier(0.4,0,0.6,1) infinite' }}>
+                <BellRing className="w-5 h-5" style={{ color: '#ffd8ad' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>Incoming check-in call</div>
+                <div style={{ fontFamily: appTheme.headingFont, fontSize: '1.45rem', color: '#fff4e6' }}>AarogyaVaani is calling</div>
+              </div>
+            </div>
+
+            <div style={{ padding: '0.95rem 1rem', borderRadius: '1.1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff4e6' }}>{incomingReminder.title}</div>
+              {incomingReminder.description ? <div style={{ fontSize: '0.86rem', color: 'rgba(255,255,255,0.72)', lineHeight: 1.6, marginTop: '0.35rem' }}>{incomingReminder.description}</div> : null}
+              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                <Badge tone="copper">{incomingReminder.category || 'follow-up'}</Badge>
+                <Badge tone={incomingReminder.priority === 'high' ? 'danger' : incomingReminder.priority === 'medium' ? 'warning' : 'success'}>{incomingReminder.priority || 'medium'}</Badge>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '0.65rem' }}>
+              <button
+                onClick={handleAcceptIncomingCall}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.65rem', width: '100%', padding: '0.95rem 1rem', borderRadius: '1rem', border: 'none', background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                <Phone className="w-4 h-4" />
+                Accept and connect to agent
+              </button>
+              <button
+                onClick={handleDismissIncomingCall}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.65rem', width: '100%', padding: '0.9rem 1rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.84)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                <PhoneOff className="w-4 h-4" />
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

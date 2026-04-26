@@ -1,1 +1,14 @@
 .vercel
+.env
+.env.local
+__pycache__/
+*.pyc
+*.log
+deploy_backend.js
+push_env.mjs
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/dev_output.txt
+frontend/nul
+frontend/update_prompt.mjs

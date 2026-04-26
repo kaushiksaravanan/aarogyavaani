@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Phone, Activity, Database, Server, CheckCircle, XCircle, Globe, Brain, Users, Sparkles, Bot, Shield, AlertTriangle, Zap } from 'lucide-react'
 import { healthCheck, getSupportedLanguages, getQdrantStats, runProactiveCheck } from '../lib/api'
+import { CONFIG } from '../lib/config'
 import { AppPage, PageHeader, SurfaceCard, PrimaryButton, SecondaryButton, StatCard, Badge, appTheme } from '../components/AppPrimitives'
 import { getStoredUserId } from '../lib/profileStore'
 
@@ -93,7 +94,7 @@ export default function DashboardPage() {
   ]
 
   const services = [
-    { name: 'FastAPI Backend', url: 'aarogyavaani-api.vercel.app', icon: Server, status: backendStatus?.status === 'ok' },
+    { name: 'FastAPI Backend', url: CONFIG.API_BASE_URL || 'Configure VITE_API_BASE_URL', icon: Server, status: backendStatus?.status === 'ok' },
     { name: 'Google Gemini AI', url: 'Gemini 2.0 Flash — Primary LLM & Vision', icon: Sparkles, status: true },
     { name: 'Qdrant Vector DB', url: 'Qdrant Cloud (EU-West-1)', icon: Database, status: true },
     { name: 'Vapi Voice Stack', url: 'GPT-4o + ElevenLabs + Deepgram', icon: Phone, status: true },

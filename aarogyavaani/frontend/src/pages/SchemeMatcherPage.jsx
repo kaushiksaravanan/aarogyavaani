@@ -149,39 +149,48 @@ export default function SchemeMatcherPage() {
             </SurfaceCard>
           )}
 
-          {results && results.matches && (
+          {results && results.matched_schemes && (
             <div className="space-y-4">
               <StatusBanner
                 icon={CheckCircle}
-                title={`${results.matches.length} scheme${results.matches.length !== 1 ? 's' : ''} found`}
-                subtitle={`Out of ${results.total_schemes_checked || 8} central and state schemes checked`}
+                title={`${results.matched_schemes.length} scheme${results.matched_schemes.length !== 1 ? 's' : ''} found`}
+                subtitle={results.patient_summary || 'Personalized eligibility guidance generated from your profile.'}
                 tone="success"
               />
 
-              {results.matches.map((scheme, i) => (
+              {results.total_potential_coverage ? (
+                <StatusBanner
+                  icon={IndianRupee}
+                  title="Potential coverage"
+                  subtitle={results.total_potential_coverage}
+                  tone="info"
+                />
+              ) : null}
+
+              {results.matched_schemes.map((scheme, i) => (
                 <SurfaceCard key={i} style={{ transition: 'box-shadow 200ms ease' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                     <div>
                       <h3 style={{ fontFamily: appTheme.headingFont, fontSize: '1.15rem', color: appTheme.espresso, marginBottom: '0.2rem' }}>
                         {scheme.scheme_name || scheme.name}
                       </h3>
-                      {scheme.hindi_name && (
-                        <p style={{ fontSize: '0.82rem', color: appTheme.copper, fontWeight: 600 }}>{scheme.hindi_name}</p>
+                      {scheme.scheme_name_hindi && (
+                        <p style={{ fontSize: '0.82rem', color: appTheme.copper, fontWeight: 600 }}>{scheme.scheme_name_hindi}</p>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                       {scheme.eligibility_score != null && (
-                        <Badge tone={scheme.eligibility_score >= 70 ? 'success' : scheme.eligibility_score >= 40 ? 'warning' : 'neutral'}>
-                          {scheme.eligibility_score}% match
+                        <Badge tone={scheme.eligibility_score >= 0.7 ? 'success' : scheme.eligibility_score >= 0.4 ? 'warning' : 'neutral'}>
+                          {Math.round((scheme.eligibility_score || 0) * 100)}% match
                         </Badge>
                       )}
                       {scheme.category && <Badge tone="info">{scheme.category}</Badge>}
                     </div>
                   </div>
 
-                  {scheme.description && (
+                  {scheme.why_eligible && (
                     <p style={{ fontSize: '0.88rem', color: appTheme.espressoSoft, lineHeight: 1.65, marginBottom: '0.75rem' }}>
-                      {scheme.description}
+                      {scheme.why_eligible}
                     </p>
                   )}
 

@@ -170,6 +170,90 @@ export async function generateTasks(summary, userId = 'anonymous') {
   }
 }
 
+export async function scheduleReminder({
+  userId,
+  title,
+  description = '',
+  priority = 'medium',
+  category = 'follow-up',
+  scheduledFor = '',
+  dueSuggestion = '',
+  sourceSummary = '',
+  reminderType = 'reminder',
+  deliveryMode = 'in_app',
+  customerNumber = '',
+}) {
+  try {
+    const res = await fetch(`${BASE}/reminders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        title,
+        description,
+        priority,
+        category,
+        scheduled_for: scheduledFor,
+        due_suggestion: dueSuggestion,
+        source_summary: sourceSummary,
+        reminder_type: reminderType,
+        delivery_mode: deliveryMode,
+        customer_number: customerNumber,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Reminder scheduling failed:', err)
+    return { status: 'error', error: err.message }
+  }
+}
+
+export async function getReminders(userId, includeDone = true) {
+  try {
+    const res = await fetch(`${BASE}/reminders/${encodeURIComponent(userId)}?include_done=${includeDone ? 'true' : 'false'}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Reminder fetch failed:', err)
+    return { status: 'error', reminders: [], total: 0, error: err.message }
+  }
+}
+
+export async function updateReminderStatus({ userId, reminderId, status, scheduledFor = '', note = '' }) {
+  try {
+    const res = await fetch(`${BASE}/reminders/${encodeURIComponent(reminderId)}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        status,
+        scheduled_for: scheduledFor,
+        note,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Reminder status update failed:', err)
+    return { status: 'error', error: err.message }
+  }
+}
+
+export async function processDueReminders() {
+  try {
+    const res = await fetch(`${BASE}/reminders/process_due`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Reminder processing failed:', err)
+    return { status: 'error', reminders: [], due: 0, error: err.message }
+  }
+}
+
 export async function assessEmergency(userId, symptomKeyword, transcriptText = '') {
   try {
     const res = await fetch(`${BASE}/assess_emergency`, {
@@ -320,17 +404,32 @@ export async function getAgentCapabilities() {
 // ---------------------------------------------------------------------------
 
 export async function matchSchemes({ userId, state = '', conditions = [], income = '', age = '', gender = '' }) {
+  const annualIncomeMap = {
+    below_1_lakh: 100000,
+    '1_to_3_lakh': 300000,
+    '3_to_5_lakh': 500000,
+    '5_to_10_lakh': 1000000,
+    above_10_lakh: 1200000,
+  }
   try {
     const res = await fetch(`${BASE}/schemes/match`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, state, conditions, income, age, gender }),
+      body: JSON.stringify({
+        user_id: userId,
+        state,
+        annual_income: annualIncomeMap[income] || 0,
+        age: Number(age) || 0,
+        gender,
+        conditions,
+        has_bpl_card: income === 'below_1_lakh',
+      }),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return await res.json()
   } catch (err) {
     console.error('Scheme matching failed:', err)
-    return { status: 'error', error: err.message, matches: [], total_schemes_checked: 0 }
+    return { status: 'error', error: err.message, matched_schemes: [], total_schemes_checked: 0 }
   }
 }
 

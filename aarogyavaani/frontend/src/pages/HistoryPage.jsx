@@ -53,7 +53,7 @@ function exportCallAsText(call, index) {
     '',
     call.conditions?.length ? `Conditions: ${call.conditions.join(', ')}` : '',
     '',
-    '- Exported from AarogyaVaani (https://aarogyavaani-app.vercel.app)',
+    `- Exported from AarogyaVaani (${CONFIG.APP_BASE_URL})`,
   ].filter(Boolean).join('\n')
   const blob = new Blob([lines], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
@@ -72,7 +72,7 @@ function exportAllCallsAsText(calls) {
     call.conditions?.length ? `Conditions: ${call.conditions.join(', ')}` : '',
     '',
   ].filter(Boolean).join('\n')).join('\n')
-  const full = `AarogyaVaani - Full Call History\nExported: ${new Date().toLocaleString()}\n\n${lines}\n- https://aarogyavaani-app.vercel.app`
+  const full = `AarogyaVaani - Full Call History\nExported: ${new Date().toLocaleString()}\n\n${lines}\n- ${CONFIG.APP_BASE_URL}`
   const blob = new Blob([full], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -84,7 +84,7 @@ function exportAllCallsAsText(calls) {
 
 function shareCall(call, platform) {
   const text = `AarogyaVaani Call Summary:\n${call.summary || 'No summary'}${call.conditions?.length ? `\nConditions: ${call.conditions.join(', ')}` : ''}`
-  const url = 'https://aarogyavaani-app.vercel.app'
+  const url = CONFIG.APP_BASE_URL
   if (platform === 'whatsapp') {
     window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n\n${url}`)}`, '_blank')
   } else if (platform === 'x') {

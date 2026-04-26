@@ -27,7 +27,10 @@ KNOWLEDGE_COLLECTION = os.getenv("KNOWLEDGE_COLLECTION", "health_knowledge_base"
 MEMORY_COLLECTION = os.getenv("MEMORY_COLLECTION", "user_memory")
 
 # --- Vapi ---
+# Private API key used for backend-initiated outbound calls.
 VAPI_API_KEY = os.getenv("VAPI_API_KEY", "")
+VAPI_ASSISTANT_ID = os.getenv("VAPI_ASSISTANT_ID", "")
+VAPI_PHONE_NUMBER_ID = os.getenv("VAPI_PHONE_NUMBER_ID", "")
 
 # --- App metadata ---
 APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
@@ -39,6 +42,7 @@ PORT = int(os.getenv("PORT", "8000"))
 
 # --- Security ---
 VAPI_SECRET = os.getenv("VAPI_SECRET", "")
+CRON_SECRET = os.getenv("CRON_SECRET", "")
 
 # --- Google Gemini ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -46,3 +50,9 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 # --- Deployment ---
 SERVER_URL = os.getenv("SERVER_URL", f"http://localhost:{PORT}")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
+FRONTEND_PREVIEW_ORIGIN_REGEX = os.getenv(
+    "FRONTEND_PREVIEW_ORIGIN_REGEX",
+    r"https://aarogyavaani-app(-[a-z0-9]+)?\.vercel\.app",
+)
+CORS_ALLOW_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS", "")

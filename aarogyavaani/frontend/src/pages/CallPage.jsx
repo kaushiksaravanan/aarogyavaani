@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Phone, PhoneOff, Mic, MicOff, Loader2, Heart, Volume2, Clock, MessageSquare, X, AlertCircle, Upload, FileText, Stethoscope, BookOpen, ShieldAlert, Lock } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { getVapi, destroyVapi } from '../lib/vapi'
 import { CONFIG } from '../lib/config'
-import { uploadMedicalReport, getDoctorBrief, getMedicalReports, assessEmergency, initiateEmergencyCall } from '../lib/api'
+import { uploadMedicalReport, getDoctorBrief, getMedicalReports, assessEmergency, initiateEmergencyCall, updateReminderStatus } from '../lib/api'
 import { useSessionBuffer } from '../lib/sessionBuffer'
 import { createAuditHash } from '../lib/crypto'
 import NurseAvatar from '../components/NurseAvatar'
 import VoiceOnboarding, { shouldShowOnboarding } from '../components/GuidedTour'
 import { addPrivateDocument, getPrivateDocuments, queryPrivateDocuments, synthesizePrivateDocumentAnswer } from '../lib/privateDocuments'
 import { getStoredUserId, loadStoredProfile } from '../lib/profileStore'
+import { emitReminderChange, getActiveIncomingReminder, setActiveIncomingReminder, updateLocalReminder } from '../lib/reminderStore'
 import { getDocumentPrivacyMode, getOcrLanguages } from '../lib/settingsStore'
 import * as pdfjsLib from 'pdfjs-dist/build/pdf'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url'
@@ -95,6 +97,7 @@ const STATUS_MAP = {
 /* warm pulse keyframes are in index.css */
 
 export default function CallPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [status, setStatus] = useState('idle')
   const [messages, setMessages] = useState([])
   const [isMuted, setIsMuted] = useState(false)
@@ -132,6 +135,8 @@ export default function CallPage() {
   const [textResponses, setTextResponses] = useState([])
   const [textLoading, setTextLoading] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => shouldShowOnboarding())
+  const [incomingReminder, setIncomingReminder] = useState(null)
+  const userId = getStoredUserId() || profile.userId || 'guest'
 
   // Session buffer: process only latest message (self-correction support)
   const {
@@ -152,11 +157,16 @@ export default function CallPage() {
   const timerRef = useRef(null)
   const messagesEndRef = useRef(null)
   const statusRef = useRef(status)
+  const activeReminderRef = useRef(null)
 
   // Keep statusRef in sync
   useEffect(() => {
     statusRef.current = status
   }, [status])
+
+  useEffect(() => {
+    activeReminderRef.current = incomingReminder
+  }, [incomingReminder])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -245,6 +255,23 @@ export default function CallPage() {
   }, [])
 
   useEffect(() => {
+    let mounted = true
+    const reminderId = searchParams.get('incomingReminder')
+    if (!reminderId || !userId) return undefined
+
+    getActiveIncomingReminder(userId)
+      .then((reminder) => {
+        if (!mounted || !reminder || reminder.reminder_id !== reminderId) return
+        setIncomingReminder(reminder)
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
+  }, [searchParams, userId])
+
+  useEffect(() => {
     setUploadMode(getDocumentPrivacyMode())
   }, [showUpload])
 
@@ -262,6 +289,21 @@ export default function CallPage() {
       console.log('[AV] call-end: Call ended normally')
       setStatus('ended')
       if (timerRef.current) clearInterval(timerRef.current)
+      if (activeReminderRef.current?.reminder_id) {
+        const reminder = activeReminderRef.current
+        void (async () => {
+          try {
+            await updateReminderStatus({ userId, reminderId: reminder.reminder_id, status: 'completed', note: 'Scheduled follow-up call completed' })
+            await updateLocalReminder(userId, reminder.reminder_id, { status: 'completed', note: 'Scheduled follow-up call completed' })
+            await setActiveIncomingReminder(userId, null)
+            emitReminderChange()
+          } catch (_) {
+            // non-blocking cleanup
+          }
+        })()
+        activeReminderRef.current = null
+        setIncomingReminder(null)
+      }
       // Destroy the instance so next call gets a fresh one (prevents KrispSDK duplication)
       destroyVapi()
       setTimeout(() => setStatus('idle'), 3000)
@@ -353,8 +395,20 @@ export default function CallPage() {
         console.log('[AV] Step 5: Requesting mic permission + calling vapi.start() with assistantId:', CONFIG.VAPI_ASSISTANT_ID)
         console.log('[AV] Doctor mode:', doctorMode)
         const startTime = Date.now()
+        const assistantOverrides = {
+          variableValues: {
+            user_id: userId,
+            reminder_title: incomingReminder?.title || '',
+            reminder_category: incomingReminder?.category || '',
+          },
+          metadata: {
+            user_id: userId,
+            incoming_reminder_id: incomingReminder?.reminder_id || '',
+          },
+        }
         if (doctorMode) {
           await vapi.start(CONFIG.VAPI_ASSISTANT_ID, {
+            ...assistantOverrides,
             model: {
               messages: [{
                 role: 'system',
@@ -364,10 +418,25 @@ export default function CallPage() {
             firstMessage: 'Hello Doctor. I have the patient\'s complete history and uploaded reports ready. What would you like to know?',
           })
         } else {
-          await vapi.start(CONFIG.VAPI_ASSISTANT_ID)
+          await vapi.start(CONFIG.VAPI_ASSISTANT_ID, incomingReminder ? {
+            ...assistantOverrides,
+            firstMessage: `Hello. This is your scheduled AarogyaVaani follow-up call about ${incomingReminder.title}. Please tell me how you are feeling today.`,
+          } : {
+            ...assistantOverrides,
+          })
         }
         console.log(`[AV] Step 6: vapi.start() resolved successfully in ${Date.now() - startTime}ms`)
         console.log('[AV] Waiting for call-start event from Daily.co...')
+
+        if (incomingReminder) {
+          await updateReminderStatus({ userId, reminderId: incomingReminder.reminder_id, status: 'called', note: 'Scheduled follow-up call connected' })
+          await updateLocalReminder(userId, incomingReminder.reminder_id, { status: 'called', note: 'Scheduled follow-up call connected' })
+          await setActiveIncomingReminder(userId, incomingReminder)
+          emitReminderChange()
+          const nextParams = new URLSearchParams(searchParams)
+          nextParams.delete('incomingReminder')
+          setSearchParams(nextParams, { replace: true })
+        }
       } catch (err) {
         console.error('[AV] FAILED at vapi.start():', err)
         console.error('[AV] Error name:', err?.name, '| message:', err?.message)
@@ -375,6 +444,12 @@ export default function CallPage() {
         const msg = err?.message || err?.error?.message || 'Could not connect. Please check your internet and try again.'
         setErrorMsg(msg)
         setStatus('idle')
+        if (incomingReminder?.reminder_id) {
+          await updateReminderStatus({ userId, reminderId: incomingReminder.reminder_id, status: 'ringing', note: 'Scheduled call failed to connect; reminder returned to ringing state' })
+          await updateLocalReminder(userId, incomingReminder.reminder_id, { status: 'ringing', note: 'Scheduled call failed to connect; reminder returned to ringing state' })
+          await setActiveIncomingReminder(userId, incomingReminder)
+          emitReminderChange()
+        }
       }
     }
   }
@@ -396,7 +471,6 @@ export default function CallPage() {
 
   const isActive = status === 'active' || status === 'connecting'
   const hasMessages = messages.length > 0
-  const userId = getStoredUserId() || profile.userId || 'guest'
   const totalReportCount = reports.length + privateReports.length
 
   // Load reports on mount
@@ -920,8 +994,15 @@ export default function CallPage() {
           {/* Helper text */}
           {status === 'idle' && !errorMsg && !isOffline && (
             <div className="mt-6 sm:mt-8 max-w-xs text-center">
+              {incomingReminder ? (
+                <div className="mb-4 px-4 py-3 rounded-2xl" style={{ background: 'rgba(198,117,12,0.10)', border: '1px solid rgba(198,117,12,0.18)' }}>
+                  <div className="text-xs uppercase tracking-wide" style={{ color: 'hsl(45 21% 55%)', fontWeight: 700 }}>Scheduled check-in</div>
+                  <div className="text-sm mt-1" style={{ color: 'hsl(45 21% 92%)', fontWeight: 700 }}>{incomingReminder.title}</div>
+                  {incomingReminder.description ? <div className="text-xs mt-1" style={{ color: 'hsl(45 21% 68%)', lineHeight: 1.6 }}>{incomingReminder.description}</div> : null}
+                </div>
+              ) : null}
               <p className="text-sm" style={{ color: 'hsl(45 21% 50%)' }}>
-                Click the button to start talking. Ask about diabetes, government schemes, maternal health, and more.
+                {incomingReminder ? 'Tap the button to answer your scheduled AarogyaVaani check-in call.' : 'Click the button to start talking. Ask about diabetes, government schemes, maternal health, and more.'}
               </p>
               <div className="flex items-center justify-center gap-1.5 mt-3 px-3 py-1.5 rounded-full mx-auto w-fit" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>

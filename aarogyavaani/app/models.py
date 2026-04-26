@@ -77,6 +77,74 @@ class TaskGenerationResponse(BaseModel):
     status: str = "ok"
 
 
+class ReminderScheduleRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=64)
+    title: str = Field(..., min_length=1, max_length=160)
+    description: str = Field(default="", max_length=2000)
+    priority: str = Field(default="medium", pattern=r"^(high|medium|low)$")
+    category: str = Field(default="follow-up", max_length=80)
+    scheduled_for: str = ""
+    due_suggestion: str = ""
+    source_summary: str = Field(default="", max_length=5000)
+    reminder_type: str = Field(default="reminder", pattern=r"^(reminder|call)$")
+    delivery_mode: str = Field(
+        default="in_app", pattern=r"^(in_app|mock_incoming|vapi_outbound)$"
+    )
+    customer_number: str = Field(default="", max_length=32)
+
+
+class ReminderEntry(BaseModel):
+    reminder_id: str
+    user_id: str
+    title: str
+    description: str = ""
+    priority: str = Field(default="medium", pattern=r"^(high|medium|low)$")
+    category: str = "follow-up"
+    scheduled_for: str = ""
+    due_suggestion: str = ""
+    status: str = "scheduled"
+    reminder_type: str = "reminder"
+    delivery_mode: str = "mock_incoming"
+    source_summary: str = ""
+    customer_number: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+    last_triggered_at: str = ""
+    outbound_call_status: str = ""
+    note: str = ""
+
+
+class ReminderListResponse(BaseModel):
+    user_id: str
+    reminders: list[ReminderEntry]
+    total: int
+    status: str = "ok"
+
+
+class ReminderStatusUpdateRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=64)
+    status: str = Field(
+        ...,
+        pattern=r"^(scheduled|ringing|acknowledged|completed|dismissed|snoozed|called|missed)$",
+    )
+    scheduled_for: str = ""
+    note: str = Field(default="", max_length=500)
+
+
+class ReminderActionResponse(BaseModel):
+    status: str = "ok"
+    reminder: ReminderEntry
+
+
+class ReminderProcessResponse(BaseModel):
+    processed: int = 0
+    due: int = 0
+    outbound_triggered: int = 0
+    mock_due: int = 0
+    reminders: list[ReminderEntry] = []
+    status: str = "ok"
+
+
 class CallHistoryEntry(BaseModel):
     summary: str
     timestamp: str
